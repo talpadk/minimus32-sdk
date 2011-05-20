@@ -19,7 +19,7 @@ int main(void) {
   }
 
   while (1){
-    led_red_toggle(1);
+    led_red_toggle();
     for (i=0; i<20000; i++){
     }
   }
