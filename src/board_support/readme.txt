@@ -1,1 +1,1 @@
-A folder for code that helps use the prepheials on the ATMEGA32U2
+A folder for code that helps use the peripherals on the ATMEGA32U2
