@@ -8,7 +8,7 @@
 
 int clock;
 
-void clock_prescale_set(uint8_t a)
+void clock_prescale_set_local(uint8_t a)
 {
     uint8_t __tmp = _BV(CLKPCE);
     __asm__ __volatile__ (
@@ -41,7 +41,7 @@ int main(void) {
   watchdog_disable();
   minimus32_init();
 
-  clock_prescale_set(0); //1 as prescaler
+  clock_prescale_set_local(0); //1 as prescaler
 
   OCR1AH = 62; //set OCR1A to 16000
   OCR1AL = 128; 
