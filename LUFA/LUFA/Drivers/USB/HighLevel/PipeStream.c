@@ -109,6 +109,7 @@ uint8_t Pipe_Discard_Stream(uint16_t Length
 	return PIPE_RWSTREAM_NoError;
 }
 
+//#lazylinking off 
 /* The following abuses the C preprocessor in order to copy-past common code with slight alterations,
  * so that the code needs to be written once. It is a crude form of templating to reduce code maintenance. */
 
@@ -193,4 +194,4 @@ uint8_t Pipe_Discard_Stream(uint16_t Length
 #include "Template/Template_Pipe_RW.c"
 
 #endif
-
+//#lazylinking on

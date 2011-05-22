@@ -34,7 +34,7 @@
 
 #define  __INCLUDE_FROM_CDC_DRIVER
 #define  __INCLUDE_FROM_CDC_HOST_C
-#include "CDC.h"
+#include "CDC_host.h"
 
 uint8_t CDC_Host_ConfigurePipes(USB_ClassInfo_CDC_Host_t* const CDCInterfaceInfo,
                                 uint16_t ConfigDescriptorSize,

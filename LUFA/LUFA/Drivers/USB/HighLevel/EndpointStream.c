@@ -108,6 +108,8 @@ uint8_t Endpoint_Discard_Stream(uint16_t Length
 	return ENDPOINT_RWSTREAM_NoError;
 }
 
+//#lazylinking off 
+
 #define  TEMPLATE_FUNC_NAME                        Endpoint_Write_Stream_LE
 #define  TEMPLATE_BUFFER_TYPE                      const void*
 #define  TEMPLATE_CLEAR_ENDPOINT()                 Endpoint_ClearIN()
@@ -231,3 +233,4 @@ uint8_t Endpoint_Discard_Stream(uint16_t Length
 #include "Template/Template_Endpoint_Control_R.c"
 
 #endif
+//#lazylinking on

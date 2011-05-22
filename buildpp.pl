@@ -85,6 +85,9 @@ my @targets:shared = ();
 #set to true when options and arguments are read
 my $argumentsRead:shared = 0;
 
+#if set to true "" include pathes will have there path removed
+my $stripIncludePath:shared = 0;
+
 #
 #
 #
@@ -440,6 +443,10 @@ sub parseFile
 {
   my $filename = $_[0];
 
+  if ($stripIncludePath){
+      $filename =~ s/^.+\///;
+  }
+
   if (exists($deps{$filename})){
     return;
   }
@@ -484,10 +491,16 @@ sub parseFile
     if ($currentTarget eq "all" or $target eq $currentTarget){
       #curent target matches, now read other options
       if ($line =~ /^\s*(\#include\s*\"\s*)(\S+)(\s*\")/){
-        push (@includeList, $1.$2.$3);
+	my $inc = $1;
+	my $lineFile = $2;
+	my $suffix = $3;
+	if ($stripIncludePath){
+	    $lineFile =~ s/^.+\///;
+	}
+        push (@includeList, $inc.$lineFile.$suffix);
         if ($currentLazyLinking){
-          my $linkName = $2;
-          #remove suffix
+          my $linkName = $lineFile;
+          #remove file suffix
           $linkName =~ s/\.[^\.]+$//;
           push (@includeList, "\#link $linkName");
         }
@@ -510,6 +523,11 @@ sub parseFile
 sub parseFileRecurcive
 {
   my $file = $_[0];
+
+  if ($stripIncludePath){
+      $file =~ s/^.+\///;
+  }
+
   my @result=();
 
   if (exists($recurivePassedFiles{$file})){
@@ -565,6 +583,10 @@ sub parseFileRecurcive
 sub parseFileCached{
   my $filename = $_[0];
   
+  if ($stripIncludePath){
+      $filename =~ s/^.+\///;
+  }
+
   #test for a cached(mem) version and return it if found 
   if (exists($depCache{$filename})){
     my @result = @{$depCache{$filename}};
@@ -699,7 +721,11 @@ sub getProgressInfo
 sub buildObjectFile
 {
   my $filename = $_[0];  
-    
+
+  if ($stripIncludePath){
+      $filename =~ s/^.+\///;
+  }
+  
   my $comileArguments = $rebuildOFilesArguments{$filename};
   my $path = $fileMapping{$filename.".$codeSuffix"};
   
@@ -749,6 +775,14 @@ sub buildObjectFile
 sub findObjectFiles
 {
   my $filename = $_[0];
+
+  if ($stripIncludePath){
+      $filename =~ s/^.+\///;
+  }
+
+  if ($stripIncludePath){
+      $filename =~ s/^.+\///;
+  }
 
   if ($verbose){
     print $colourVerbose."Generating $filename.$objectSuffix$colourNormal\n";
