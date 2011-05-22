@@ -1,9 +1,22 @@
 //#exe
 #include <avr/io.h>
 #include <avr/power.h>
+#include <avr/interrupt.h>
 
 #include "minimus32.h"
 #include "watchdog.h"
+
+int clock;
+
+ISR(TIMER1_COMPA_vect) //(TIMER1_OVF_vect)
+{
+  //on/off period of 1 sec @ 16Mhz
+  clock++;
+  if (clock>1000){
+    clock=0;
+    led_blue_toggle();
+  }
+}
 
 
 int main(void) {
@@ -12,10 +25,17 @@ int main(void) {
   watchdog_disable();
   minimus32_init();
 
+  OCR1AH = 62; //set OCR1A to 16000
+  OCR1AL = 128; 
+  
+  TCCR1A = 0; //prescaler = 1 & count up to OCR1A function 
+  TCCR1B = 1<<WGM12|1<<CS10;
+
+  TIMSK1 = 1<<ICIE1|1<<OCIE1A; //enable timer1 int and compare a int
+
+  sei(); //global int enable
+
   while (!hwb_is_pressed()){
-    led_blue_toggle();
-    for (i=0; i<5000; i++){
-    }
   }
 
   while (1){
