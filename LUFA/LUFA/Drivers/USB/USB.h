@@ -368,6 +368,8 @@
 			#error The currently selected AVR model is not supported under the USB component of the LUFA library.
 		#endif
 
+//#lazylinking off
+
 	/* Includes: */
 		#include "HighLevel/USBTask.h"
 		#include "HighLevel/Events.h"
@@ -406,3 +408,4 @@
 
 #endif
 
+//#lazylinking on
