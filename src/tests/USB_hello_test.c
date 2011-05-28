@@ -13,6 +13,10 @@
 #include "sys_clock.h"
 int clock;
 
+const char *HELLO = "Hello world\n";
+const char *CMD_UNKNOWN = "Command unknown!!!\n";
+
+
 ISR(TIMER1_COMPA_vect)
 {
   //on/off period of 1 sec @ 16Mhz
@@ -78,6 +82,9 @@ void EVENT_CDC_Device_LineEncodingChanged(USB_ClassInfo_CDC_Device_t* const CDCI
 int main(void) {
   unsigned int i;
 
+  const char * data =0;
+  int16_t tmp=0;
+
   watchdog_disable();
   minimus32_init();
   clock_prescale_none();
@@ -97,11 +104,29 @@ int main(void) {
   USB_Init();
 
   while (1){
-    i++;
+    /*    i++;
     if (i>60000){
       i=0;
       CDC_Device_SendByte(&VirtualSerial_CDC_Interface, 'R');
     }
+    */
+    if (data!=0){
+      CDC_Device_SendByte(&VirtualSerial_CDC_Interface, *data);
+      data++;
+      if (*data==0) data=0;	     
+    }
+    if (data==0 && CDC_Device_BytesReceived(&VirtualSerial_CDC_Interface)!=0){
+      tmp = CDC_Device_ReceiveByte(&VirtualSerial_CDC_Interface);
+      switch (tmp){
+      default:
+	data=CMD_UNKNOWN;
+	break;
+      case '\n':
+	data=HELLO;
+	  break;
+      }
+    }
+
     CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
     USB_USBTask();
 
