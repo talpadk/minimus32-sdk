@@ -65,6 +65,6 @@ void timer1_clock_init(void);
  * @param user_data a pointer to user data that will be passed to the function
  * @param callback_struct a pointer to the struct that will be initialized and linked into the clock
  */
-void timer1_clock_register_callback(uint16_t sec, uint16_t msec, uint8_t recurring, void (*callback)(void *), void *user_data, timer1_callback *callback_struct)
+void timer1_clock_register_callback(uint16_t sec, uint16_t msec, uint8_t recurring, void (*callback)(void *), void *user_data, timer1_callback *callback_struct);
 
 #endif //MOD_TIMER1_CLOCK_H
