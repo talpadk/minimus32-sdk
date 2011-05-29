@@ -11,21 +11,23 @@
 #include "minimus32.h"
 #include "watchdog.h"
 #include "sys_clock.h"
-int clock;
+#include "timer1_clock.h"
+
+#include "minimus32.h"
 
 const char *HELLO = "Hello world\n";
 const char *CMD_UNKNOWN = "Command unknown!!!\n";
 
 
-ISR(TIMER1_COMPA_vect)
-{
-  //on/off period of 1 sec @ 16Mhz
-  clock++;
-  if (clock>1000){
-    clock=0;
-    led_blue_toggle();
-  }
+void timer_demo_a(void *data){
+  led_red_toggle();
 }
+
+void timer_demo_b(void *data){
+  led_blue_toggle();
+}
+
+
 USB_ClassInfo_CDC_Device_t VirtualSerial_CDC_Interface =
   {
     .Config =
@@ -50,7 +52,6 @@ void EVENT_USB_Device_Connect(void);
 
 void EVENT_USB_Device_Connect(void)
 {
-  led_red(1);
 }
 
 void EVENT_USB_Device_Disconnect(void)
@@ -80,7 +81,9 @@ void EVENT_CDC_Device_LineEncodingChanged(USB_ClassInfo_CDC_Device_t* const CDCI
 
 
 int main(void) {
-  unsigned int i;
+  timer1_callback demo_callback_a;
+  timer1_callback demo_callback_b;
+  
 
   const char * data =0;
   int16_t tmp=0;
@@ -89,17 +92,11 @@ int main(void) {
   minimus32_init();
   clock_prescale_none();
   
-
-
-  OCR1AH = 62; //set OCR1A to 16000
-  OCR1AL = 128; 
-  
-  TCCR1A = 0; //prescaler = 1 & count up to OCR1A function 
-  TCCR1B = 1<<WGM12|1<<CS10;
-
-  TIMSK1 = 1<<ICIE1|1<<OCIE1A; //enable timer1 int and compare a int
-
   sei(); //global int enable
+  timer1_clock_init();
+  
+  timer1_clock_register_callback(1, 0, 1, &timer_demo_a, 0, &demo_callback_a);
+  timer1_clock_register_callback(1, 100, 1, &timer_demo_b, 0, &demo_callback_b);
 
   USB_Init();
 

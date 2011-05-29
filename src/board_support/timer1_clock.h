@@ -8,6 +8,7 @@
  * timer1_clock takes ownership/uses the timer1 module of the MCU
  * 
  * timer1_clock provides a mili second resolution clock with callback functionality at given intervals and wall times.
+ * WARNING all timer1 function expects the global int to be enabled
  */
 
 
@@ -31,14 +32,17 @@ typedef struct {
 } timer1_wall_time;
 
 ///Struct used for holding callback information
-typedef struct {
+typedef struct timer1_callback{
   ///The next callback in the linked list
-  timer1_callback *next;
+  struct timer1_callback *next;
   ///An abused wall time struct, used for determining "next" call time
   timer1_wall_time time;
 
-  ///If true the alarm is recurring, only valid for period alarms
+  ///If true the alarm is recurring, only valid for periodic alarms
   uint8_t recurring;
+
+  ///Used to store the miliseconds for recurring events;
+  uint16_t recurring_msec;
 
   ///Data that will be passed on to the call back function
   void *user_data;
@@ -58,7 +62,7 @@ void timer1_clock_init(void);
 /** 
  * Registers a callback into the clock
  * 
- * @param sec number of seconds that should pass before calling the callback
+ * @param sec number of seconds that should pass before calling the callback.
  * @param msec aditional numer of mili seconds, range 0-999 is valid
  * @param recurring if true callback will be registered when called, otherwise it will be removed
  * @param callback a pointer to the funtion that will be called
