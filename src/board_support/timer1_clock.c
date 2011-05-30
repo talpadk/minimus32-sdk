@@ -9,13 +9,30 @@ timer1_wall_time timer1_clock_walltimer;
 timer1_callback *timer1_callback_chain;
 
 
-//Checks is a callback needs execution and does so
-void timer1_clock_check_and_execute(timer1_callback *callback){
-  if (timer1_clock_walltimer.day  >= callback->time.day  &&
-      timer1_clock_walltimer.hour >= callback->time.hour &&
-      timer1_clock_walltimer.min  >= callback->time.min  &&
-      timer1_clock_walltimer.sec  >= callback->time.sec  &&
-      timer1_clock_walltimer.msec >= callback->time.msec){
+void timer1_clock_insert_into_chain(timer1_callback *callback_struct);
+
+//Checks is a callback needs execution
+uint8_t timer1_clock_check(timer1_callback *callback){
+  if ((timer1_clock_walltimer.day  > callback->time.day)  ||
+
+      (timer1_clock_walltimer.day == callback->time.day&&
+       timer1_clock_walltimer.hour > callback->time.hour )||
+
+      (timer1_clock_walltimer.day == callback->time.day&&
+       timer1_clock_walltimer.hour== callback->time.hour&&
+       timer1_clock_walltimer.min  > callback->time.min  )||
+
+      (timer1_clock_walltimer.day == callback->time.day&&
+       timer1_clock_walltimer.hour== callback->time.hour&&
+       timer1_clock_walltimer.min == callback->time.min&&
+       timer1_clock_walltimer.sec  > callback->time.sec)  ||
+
+      (timer1_clock_walltimer.day == callback->time.day&&
+       timer1_clock_walltimer.hour== callback->time.hour&&
+       timer1_clock_walltimer.min == callback->time.min&&
+       timer1_clock_walltimer.sec == callback->time.sec &&
+       timer1_clock_walltimer.msec>= callback->time.msec)){
+
     if (callback->recurring){
       //reregister callback
       timer1_clock_register_callback(callback->time.freerunning_sec,
@@ -25,16 +42,21 @@ void timer1_clock_check_and_execute(timer1_callback *callback){
 				     callback->user_data,
 				     callback);
     }
-    callback->callback(callback->user_data);
-  }     
+    else {
+      timer1_clock_unregister_callback(callback);
+    }
+    return 1;
+  }  
+  return 0;
 }
 
 //todo use a tmp time buffer to move the run check outside of atomic space
 ISR(TIMER1_COMPA_vect)
 { 
+  timer1_callback *next=0;
   ATOMIC_BLOCK(ATOMIC_FORCEON)
   {
-    timer1_callback *next = timer1_callback_chain;
+    next = timer1_callback_chain;
 
     timer1_clock_walltimer.msec++;
     if (timer1_clock_walltimer.msec>=1000){
@@ -56,10 +78,15 @@ ISR(TIMER1_COMPA_vect)
     }
 
     while (next!=0){
-      timer1_clock_check_and_execute(next);
+      //found one
+      if (timer1_clock_check(next)){break;}
       next = next->next;
     }
-
+  }
+  //non atomic execution to avoid problems with longer that 1ms execution times
+  if (next!=0){
+    //we did find one
+    next->callback(next->user_data);
   }
 }
 
@@ -99,6 +126,45 @@ void timer1_clock_insert_into_chain(timer1_callback *callback_struct){
       next = &((*next)->next);
     }
   }
+}
+
+
+void timer1_clock_unregister_callback(timer1_callback *callback_struct)
+{
+  timer1_callback *previous = timer1_callback_chain;
+  timer1_callback *next = 0;
+
+  //empty chain
+  if (timer1_callback_chain == 0) return;
+
+  //first element is a hit
+  if (timer1_callback_chain == callback_struct){
+    //and end of chain
+    if (timer1_callback_chain->next == 0){
+       timer1_callback_chain = 0;
+    }
+    else {
+      timer1_callback_chain = timer1_callback_chain->next;
+    }
+    return;
+  }
+  
+  //run though the remaining part of the linked list
+  next = timer1_callback_chain->next;
+  while (next!=0){
+    //not a hit move on
+    if (next!=callback_struct){
+      previous = next;
+      next = next->next;      
+    }
+    //found it
+    else {
+      previous->next = next->next;
+      next = next->next;
+      return;
+    }
+  }
+
 }
 
 void timer1_clock_register_callback(uint16_t sec, uint16_t msec, uint8_t recurring, void (*callback)(void *), void *user_data, timer1_callback *callback_struct){

@@ -71,4 +71,6 @@ void timer1_clock_init(void);
  */
 void timer1_clock_register_callback(uint16_t sec, uint16_t msec, uint8_t recurring, void (*callback)(void *), void *user_data, timer1_callback *callback_struct);
 
+void timer1_clock_unregister_callback(timer1_callback *callback_struct);
+
 #endif //MOD_TIMER1_CLOCK_H

@@ -95,8 +95,8 @@ int main(void) {
   sei(); //global int enable
   timer1_clock_init();
   
-  timer1_clock_register_callback(1, 0, 1, &timer_demo_a, 0, &demo_callback_a);
-  timer1_clock_register_callback(1, 100, 1, &timer_demo_b, 0, &demo_callback_b);
+  timer1_clock_register_callback(1, 0, 0, &timer_demo_a, 0, &demo_callback_a);
+  timer1_clock_register_callback(0, 50, 1, &timer_demo_b, 0, &demo_callback_b);
 
   USB_Init();
 
