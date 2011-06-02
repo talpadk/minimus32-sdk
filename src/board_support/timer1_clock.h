@@ -71,6 +71,18 @@ void timer1_clock_init(void);
  */
 void timer1_clock_register_callback(uint16_t sec, uint16_t msec, uint8_t recurring, void (*callback)(void *), void *user_data, timer1_callback *callback_struct);
 
+/** 
+ * Unregisters the given callback
+ * 
+ * @param callback_struct the callback to unregister
+ */
 void timer1_clock_unregister_callback(timer1_callback *callback_struct);
+
+/** 
+ * Returns the current "uptime"
+ * 
+ * @param time a pointer to the time struct used to hold the result
+ */
+void timer1_clock_get_time(timer1_wall_time *time);
 
 #endif //MOD_TIMER1_CLOCK_H

@@ -20,14 +20,10 @@ void lcd_44780_command(const uint8_t command){
 }
 
 void lcd_44780_write_nibble(uint8_t data, uint8_t type){
-  PORTD = type;
-  lcd_44780_delay(500);
-  PORTD = type|(data&0x0f);
-  lcd_44780_delay(500);
   PORTD = LCD_BIT_E|type|(data&0x0f);
-  lcd_44780_delay(5000);
+  lcd_44780_delay(8000);
   PORTD = type|(data&0x0f);
-  lcd_44780_delay(5000);
+  lcd_44780_delay(5);
 }
 
 void lcd_44780_write_byte(uint8_t data, char is_command)
@@ -36,7 +32,7 @@ void lcd_44780_write_byte(uint8_t data, char is_command)
   if (is_command) type=LCD_CMD;
 
   lcd_44780_write_nibble(data>>4, type);
-  lcd_44780_delay(5000);
+  lcd_44780_delay(50);
   lcd_44780_write_nibble(data&0x0f, type);
 }
 

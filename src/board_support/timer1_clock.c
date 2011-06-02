@@ -232,3 +232,16 @@ void timer1_clock_register_callback(uint16_t sec, uint16_t msec, uint8_t recurri
     callback_struct->callback = callback;
   }
 }
+
+void timer1_clock_get_time(timer1_wall_time *time)
+{ 
+  ATOMIC_BLOCK(ATOMIC_FORCEON)
+  {
+    time->msec = timer1_clock_walltimer.msec;
+    time->sec = timer1_clock_walltimer.sec;
+    time->min = timer1_clock_walltimer.min;
+    time->hour = timer1_clock_walltimer.hour;
+    time->day = timer1_clock_walltimer.day;
+    time->freerunning_sec = timer1_clock_walltimer.freerunning_sec;
+  }
+}

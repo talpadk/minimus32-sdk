@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define LCD_44780_GOTO_CMD (0x80)
+
 /** 
  * Initializes the LCD, must be called after the display have had time to power up 
  * 
