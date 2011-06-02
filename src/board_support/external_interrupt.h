@@ -7,10 +7,10 @@
  * Defining edges to trigger the external interrupts
  */
 typedef enum {
-	lowlevel = 0,
-	any = 1,
-	falling = 2,
-	rising = 3,
+	lowlevel = 0b00,
+	any = 0b01,
+	falling = 0b10,
+	rising = 0b11,
 } interrupt_edge;
 
 
