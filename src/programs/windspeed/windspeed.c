@@ -25,7 +25,7 @@ void print_count(void *data) {
 	char str_count[33];
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 		itoa(count, str_count, 10);
-		count = 0;
+		count++;
 	}
 	lcd_44780_command(LCD_44780_GOTO_CMD+40);
 	lcd_44780_print(str_count);
