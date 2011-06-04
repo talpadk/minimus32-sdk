@@ -21,7 +21,7 @@
 
 uint32_t count = 0;
 
-void print_count() {
+void print_count(void *data) {
 	char str_count[33];
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 		itoa(count, str_count, 10);
