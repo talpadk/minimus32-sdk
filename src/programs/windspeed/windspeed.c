@@ -36,7 +36,7 @@ int main(void) {
 	minimus32_init();
 	// Clock-speed set to 16MHz
 	clock_prescale_none();
-	enable_external_interrupt_input(4, rising);
+	enable_external_interrupt_input(7, rising);
 	// Initialize LCD
 	lcd_44780_power_up_delay();
 	lcd_44780_init();
