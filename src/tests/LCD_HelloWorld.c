@@ -29,28 +29,41 @@
  * 
  */
 
+uint8_t last_sec = 100;
+
 void print_time(){
   char * time_buffer = "Dxx hh:mm:ss.mmm";
   timer1_wall_time time;
   timer1_clock_get_time(&time);
 
-  time_buffer[1] = (time.day/10)%10+'0';
-  time_buffer[2] = (time.day%10)+'0';
-
-  time_buffer[4] = (time.hour/10)+'0';
-  time_buffer[5] = (time.hour%10)+'0';
-
-  time_buffer[7] = (time.min/10)+'0';
-  time_buffer[8] = (time.min%10)+'0';
-
-  time_buffer[10] = (time.sec/10)+'0';
-  time_buffer[11] = (time.sec%10)+'0';
+  if (last_sec!=time.sec){
+    time_buffer[1] = (time.day/10)%10+'0';
+    time_buffer[2] = (time.day%10)+'0';
+    
+    time_buffer[4] = (time.hour/10)+'0';
+    time_buffer[5] = (time.hour%10)+'0';
+    
+    time_buffer[7] = (time.min/10)+'0';
+    time_buffer[8] = (time.min%10)+'0';
+    
+    time_buffer[10] = (time.sec/10)+'0';
+    time_buffer[11] = (time.sec%10)+'0';
+  }
 
   time_buffer[13] = (time.msec/100)+'0';
   time_buffer[14] = ((time.msec%100)/10)+'0';
   time_buffer[15] = (time.msec%10)+'0';
 
-  lcd_44780_print(time_buffer);
+  if (last_sec==time.sec){
+    lcd_44780_command(LCD_44780_GOTO_CMD+64+13);
+    lcd_44780_print(time_buffer+13);
+  }
+  else {
+    lcd_44780_command(LCD_44780_GOTO_CMD+64);
+    lcd_44780_print(time_buffer);
+    last_sec = time.sec;
+  }
+
 }
 
 int main(void) {
@@ -64,7 +77,6 @@ int main(void) {
   lcd_44780_print("Hello world");
 
   while (1) {
-    lcd_44780_command(LCD_44780_GOTO_CMD+40);
     print_time();  
   }
   return 0;
