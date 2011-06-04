@@ -43,7 +43,6 @@ int main(void) {
 	// Print "headline"
 	lcd_44780_print("1 sec. count:");
 	
-	sei();
 	timer1_callback print_count_callback;
 	timer1_clock_init();
 	timer1_clock_register_callback(1, 0, 1, &print_count, 0, &print_count_callback);
