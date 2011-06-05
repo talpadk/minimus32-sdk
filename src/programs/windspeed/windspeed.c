@@ -19,15 +19,15 @@
 #include "external_interrupt.h"
 #include "lcd_44780.h"
 
-uint32_t count = 0;
+int count = 0;
 
 void print_count(void *data) {
 	char str_count[33];
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 		itoa(count, str_count, 10);
-		count++;
+		count = 0;
 	}
-	lcd_44780_command(LCD_44780_GOTO_CMD+40);
+	lcd_44780_command(LCD_44780_GOTO_CMD+64);
 	lcd_44780_print(str_count);
 }
 
