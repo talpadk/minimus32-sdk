@@ -106,7 +106,7 @@ void timer1_clock_init(){
   TCCR1A = 0; //prescaler = 1 & count up to OCR1A function 
   TCCR1B = 1<<WGM12|1<<CS10;
 
-  TIMSK1 = 1<<ICIE1|1<<OCIE1A; //enable timer1 int and compare a int
+  TIMSK1 = 1<<OCIE1A; //enable timer1 compare a int
 
 }
 
