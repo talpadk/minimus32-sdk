@@ -29,14 +29,14 @@
  * 
  */
 
-uint8_t last_sec = 100;
+uint8_t last_min = 100;
 
 void print_time(){
   char * time_buffer = "Dxx hh:mm:ss.mmm";
   timer1_wall_time time;
   timer1_clock_get_time(&time);
 
-  if (last_sec!=time.sec){
+  if (last_min!=time.min){
     time_buffer[1] = (time.day/10)%10+'0';
     time_buffer[2] = (time.day%10)+'0';
     
@@ -45,23 +45,23 @@ void print_time(){
     
     time_buffer[7] = (time.min/10)+'0';
     time_buffer[8] = (time.min%10)+'0';
-    
-    time_buffer[10] = (time.sec/10)+'0';
-    time_buffer[11] = (time.sec%10)+'0';
   }
 
+  time_buffer[10] = (time.sec/10)+'0';
+  time_buffer[11] = (time.sec%10)+'0';
+ 
   time_buffer[13] = (time.msec/100)+'0';
   time_buffer[14] = ((time.msec%100)/10)+'0';
   time_buffer[15] = (time.msec%10)+'0';
 
-  if (last_sec==time.sec){
-    lcd_44780_command(LCD_44780_GOTO_CMD+64+13);
-    lcd_44780_print(time_buffer+13);
+  if (last_min==time.min){
+    lcd_44780_command(LCD_44780_GOTO_CMD+64+10);
+    lcd_44780_print(time_buffer+10);
   }
   else {
     lcd_44780_command(LCD_44780_GOTO_CMD+64);
     lcd_44780_print(time_buffer);
-    last_sec = time.sec;
+    last_min = time.min;
   }
 
 }
