@@ -16,7 +16,6 @@ typedef enum {
 
 /**
  * Enable an interrupt as input
- * NOTICE: Enables global interrupts
  * 
  * @param id the interrupt to enable as an input
  * @param edge the edge to trigger on

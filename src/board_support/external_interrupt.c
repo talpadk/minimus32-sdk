@@ -11,9 +11,6 @@ void enable_external_interrupt_input(uint8_t id, interrupt_edge edge) {
     EICRB |= edge<<((id-4)*2);
   }
   EIMSK |= (1<<id);
-
-  // Global interrupt enable
-  sei();
 }
 
 void disable_external_interrupt_input(uint8_t id) {
