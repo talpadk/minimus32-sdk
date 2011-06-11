@@ -26,7 +26,7 @@ void print_count(void *data) {
 	char str_count[16];
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 		sprintf(str_count, "%16d", count);
-//		count = 0;
+		count = 0;
 	}
 	lcd_44780_command(LCD_44780_GOTO_CMD+64);
 	lcd_44780_print(str_count);
