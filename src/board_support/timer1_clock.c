@@ -245,3 +245,16 @@ void timer1_clock_get_time(timer1_wall_time *time)
     time->freerunning_sec = timer1_clock_walltimer.freerunning_sec;
   }
 }
+
+void timer1_clock_reset()
+{ 
+  ATOMIC_BLOCK(ATOMIC_FORCEON)
+  {
+    timer1_clock_walltimer.msec = 0;
+    timer1_clock_walltimer.sec = 0;
+    timer1_clock_walltimer.min = 0;
+    timer1_clock_walltimer.hour = 0;
+    timer1_clock_walltimer.day = 0;
+    timer1_clock_walltimer.freerunning_sec = 0;
+  }
+}

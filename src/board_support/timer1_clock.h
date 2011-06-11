@@ -85,4 +85,10 @@ void timer1_clock_unregister_callback(timer1_callback *callback_struct);
  */
 void timer1_clock_get_time(timer1_wall_time *time);
 
+/** 
+ * Resets the current "uptime"
+ * Messes with already registered callbacks, so use with care!
+ */
+void timer1_clock_reset();
+
 #endif //MOD_TIMER1_CLOCK_H
