@@ -1,0 +1,1 @@
+sudo apt-get install doxygen graphviz gcc-avr avr-libc
