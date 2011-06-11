@@ -1,0 +1,4 @@
+#ifndef MOD_SPI_MASTER_H
+#define MOD_SPI_MASTER_H
+
+#endif //MOD_SPI_MASTER_H
