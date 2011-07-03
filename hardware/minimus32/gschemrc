@@ -1,0 +1,2 @@
+(output-color "enabled")      ; for color postscript output
+(load (build-path geda-rc-path "print-colormap-lightbg"))
