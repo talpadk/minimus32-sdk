@@ -4,9 +4,8 @@
 #include <stdint.h>
 
 typedef struct {
-  uint8_t pos;
+  uint16_t pos;
   uint8_t ticks_per_ms;
-  uint8_t state;
   uint16_t counter;
 } sw_rc_servo;
 
@@ -26,30 +25,14 @@ void sw_rc_servo_init(sw_rc_servo *servo, uint8_t ticks_per_ms);
  * @return if 1 you must send a high signal 0 send a low.
  */
 static inline uint8_t sw_rc_servo_animate(sw_rc_servo *servo) {
-  switch (servo->state){
-  default:
-  case 0: //send 1 ms high (-1 tick)
-    servo->counter++;
-    if (servo->counter>=servo->ticks_per_ms){
-      servo->state=1;
-      servo->counter=0;
-    }
-    return 1;
-  case 1: //extend puls according to pos+1
-    if (servo->counter > servo->pos){
-      servo->state=2;
-      servo->counter=19*servo->ticks_per_ms - servo->pos;
-    }
-    servo->counter++;
-    return 1;
-  case 2: //off to satisfy 20ms period 
-    servo->counter--;
-    if (servo->counter==0){
-      servo->state=0;
-      servo->counter=0;
-    }
-    return 0;
+  servo->counter--;
+  if (servo->counter==0){
+    servo->counter = ((uint16_t)servo->ticks_per_ms)*20;
   }
+  else if (servo->counter < servo->pos){
+    return 1;
+  }
+  return 0;
 }
 
 /** 
