@@ -6,7 +6,7 @@
  */
 
 /**
- * @defgroup prep Peripherals
+ * @defgroup per Peripherals
  * Code for devices you might want to connect to the MCU.<br>
  * <br>
  * Location: src/peripherals

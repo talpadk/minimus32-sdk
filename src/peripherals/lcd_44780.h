@@ -1,6 +1,21 @@
 #ifndef MOD_LCD_44780_H
 #define MOD_LCD_44780_H
 
+///Code for using a Hitachi 44780 compatible character LCD
+
+/**
+ * @file
+ * @author Visti Andresen
+ * @ingroup per
+ */
+
+/**
+ * @file
+ * @todo Use the read pin to speed-up the display code by polling the ready state.
+ * @todo Update the code to allow the user to select which pins are used.
+ */
+
+
 #include <stdint.h>
 
 ///A command that moves the cursor to a different position, the offset is added to the command, the offset depends on the size of the display line 2 on a 16x2 display is LCD_44780_GOTO_CMD+64

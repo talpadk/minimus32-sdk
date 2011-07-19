@@ -1,6 +1,14 @@
 #ifndef MOD_SW_RC_SERVO_H
 #define MOD_SW_RC_SERVO_H
 
+///Code for generating RC servo control signals in software
+
+/**
+ * @file
+ * @author Visti Andresen
+ * @ingroup per
+ */
+
 #include <stdint.h>
 
 typedef struct {
