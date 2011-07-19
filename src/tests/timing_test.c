@@ -1,4 +1,15 @@
 //#exe
+
+///Demonstrates using timer 1 to flash a led on and off every second
+
+/**
+ * @file
+ * @author Visti Andresen
+ * @ingroup tests
+ * @todo Rewrite to use the BSP functions
+ */
+
+
 #include <avr/io.h>
 #include <avr/power.h>
 #include <avr/interrupt.h>

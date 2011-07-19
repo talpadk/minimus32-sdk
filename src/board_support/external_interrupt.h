@@ -1,6 +1,16 @@
 #ifndef MOD_EXTERNAL_INTERRUPT_H
 #define MOD_EXTERNAL_INTERRUPT_H
 
+
+///Code for setting up interrupts for pin change events
+
+/**
+ * @file
+ * @author Morten Bressendorff Schmidt
+ * @ingroup bsp
+ */
+
+
 #include <avr/interrupt.h>
 
 /**

@@ -1,4 +1,13 @@
 //#exe
+
+///A simple LCD "Hello Word" that also shows the time since board power up
+
+/**
+ * @file
+ * @author Visti Andresen
+ * @ingroup tests
+ */
+
 #include <avr/io.h>
 #include <avr/power.h>
 

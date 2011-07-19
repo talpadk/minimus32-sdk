@@ -1,4 +1,14 @@
 //#exe
+
+///A program that demonstrates a hello world over the USB port
+
+/**
+ * @file
+ * @author Visti Andresen
+ * @ingroup tests
+ */
+
+
 #include <avr/io.h>
 #include <avr/power.h>
 #include <avr/interrupt.h>

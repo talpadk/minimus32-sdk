@@ -1,6 +1,15 @@
 #ifndef MOD_SYS_CLOCK_H
 #define MOD_SYS_CLOCK_H
 
+///Code for controlling the system clock
+
+/**
+ * @file
+ * @author Visti Andresen
+ * @ingroup bsp
+ */
+
+
 #include <stdint.h>
 
 /** 

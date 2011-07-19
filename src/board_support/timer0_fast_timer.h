@@ -1,6 +1,17 @@
 #ifndef MOD_TIMER0_FAST_TIMER
 #define MOD_TIMER0_FAST_TIMER
 
+///Code for using the timer0 as a fast interrupt source.<br>
+
+/**
+ * @file
+ * @author Visti Andresen
+ * @ingroup bsp
+ *
+ * CAUTION: You can easily use more that 100% CPU this way.
+ */
+
+
 #include <stdint.h>
 
 typedef enum {

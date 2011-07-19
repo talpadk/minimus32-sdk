@@ -1,6 +1,15 @@
 #ifndef MOD_SW_DITHER_H
 #define MOD_SW_DITHER_H
 
+///Algorithm for software ditering an output. (Analog output signal from a digital pin)
+
+/**
+ * @file
+ * @author Visti Andresen
+ * @ingroup bsp
+ */
+
+
 #include <stdint.h>
 
 typedef struct {

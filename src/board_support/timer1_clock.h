@@ -1,6 +1,15 @@
 #ifndef MOD_TIMER1_CLOCK_H
 #define MOD_TIMER1_CLOCK_H
 
+///A time of day clock with call me every n msec functionality
+
+/**
+ * @file
+ * @author Visti Andresen
+ * @ingroup bsp
+ */
+
+
 #include <stdint.h>
 
 /** 

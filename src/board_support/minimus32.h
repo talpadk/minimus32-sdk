@@ -1,6 +1,15 @@
 #ifndef MOD_MINIMUS32_H
 #define MOD_MINIMUS32_H
 
+///Code for the Minimus32 LEDs and button.
+
+/**
+ * @file
+ * @author Visti Andresen
+ * @ingroup bsp
+ */
+
+
 /** 
  * Initializes the PORTD pins as input/output as required by the hardware functions of the minimus32.
  * This function must be called before using the other minimus32 functions

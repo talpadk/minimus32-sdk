@@ -1,5 +1,14 @@
 //#exe
 
+///A program that controlls a RC servo using software timing
+
+/**
+ * @file
+ * @author Visti Andresen
+ * @ingroup tests
+ */
+
+
 /**
  * CAUTION: The USB port has limits to the current it can supply, it is highly recommended that the servo is't supplied with 5V from Vcc, especially if it is loaded.
  *
