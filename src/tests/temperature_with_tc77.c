@@ -76,9 +76,10 @@ void readTemp(void *userData){
 
   //IO setup
   //SPI master forces MISO (PB3) as input
-  //Chip select on PB4,  PB2 master out(MUST be INPUT) and PB1 CLK
+  //PB2 master out(MUST be INPUT), setting PB3 as it won't hurt
   DDRB &= 0b11110011;
-  DDRB |= 0b00010010;
+  //Chip select on PB4,  PB0 (SS) as output to prevent going into slave mode  and PB1 CLK
+  DDRB |= 0b00010011;
 
   //Chip Sel
   PORTB &= 0b11101111;
@@ -121,6 +122,8 @@ void readTemp(void *userData){
 }
 
 int main(){
+  char msg=1;
+  char i=0;
   watchdog_disable();
   minimus32_init();
   clock_prescale_none();
@@ -128,11 +131,19 @@ int main(){
   lcd_44780_power_up_delay();
   lcd_44780_init();
 
-  lcd_44780_command(LCD_44780_GOTO_CMD);
-  lcd_44780_print("TC77 Temp demo");
+
+
 
   while (1){
-    lcd_44780_power_up_delay();
+    lcd_44780_command(LCD_44780_GOTO_CMD);    
+    if (msg) lcd_44780_print(" TC77 Temp demo");
+    else  lcd_44780_print(" TCurr  TFilter");
+    i++;
+    if (i>5){
+      msg = msg^1;
+      i=0;
+    }
+
     readTemp(0);
   }
 }
