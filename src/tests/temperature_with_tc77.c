@@ -121,7 +121,17 @@ void readTemp(void *userData){
 
 }
 
+const char backslash[8] = {0b00000000,
+			   0b00010000,
+			   0b00001000,
+			   0b00000100,
+			   0b00000010,
+			   0b00000001,
+			   0b00000000,
+			   0b00000000};
+
 int main(){
+  char anim=0;
   char msg=1;
   char i=0;
   watchdog_disable();
@@ -131,7 +141,7 @@ int main(){
   lcd_44780_power_up_delay();
   lcd_44780_init();
 
-
+  lcd_44780_set_custom_char(1, backslash);
 
 
   while (1){
@@ -145,5 +155,23 @@ int main(){
     }
 
     readTemp(0);
+
+    lcd_44780_write_byte(' ', 0);
+
+    switch (anim){
+    case 0:
+      lcd_44780_write_byte('|', 0);
+      break;
+    case 1:
+      lcd_44780_write_byte('/', 0);
+      break;
+    case 2:
+      lcd_44780_write_byte('-', 0);
+      break;
+    case 3:
+      lcd_44780_write_byte(1, 0);
+    }
+    anim++;
+    if (anim>3) anim = 0;
   }
 }
