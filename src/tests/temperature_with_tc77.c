@@ -133,7 +133,7 @@ const char backslash[8] = {0b00000000,
 int main(){
   char anim=0;
   char msg=1;
-  char i=0;
+  int i=0, j=0;
   watchdog_disable();
   minimus32_init();
   clock_prescale_none();
@@ -149,13 +149,22 @@ int main(){
     if (msg) lcd_44780_print(" TC77 Temp demo");
     else  lcd_44780_print(" TCurr  TFilter");
     i++;
-    if (i>5){
+    if (i>500){
       msg = msg^1;
       i=0;
     }
 
     readTemp(0);
 
+
+
+    //Show spinning anim
+    j++;
+    if (j>30){
+      anim++;
+      if (anim>3) anim = 0;
+      j=0;
+    }
     lcd_44780_write_byte(' ', 0);
 
     switch (anim){
@@ -171,7 +180,5 @@ int main(){
     case 3:
       lcd_44780_write_byte(1, 0);
     }
-    anim++;
-    if (anim>3) anim = 0;
   }
 }
