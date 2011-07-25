@@ -15,17 +15,87 @@ void lcd_44780_delay(unsigned int loops)
   for (; loops>0; loops--){}
 }
 
+void lcd_44780_data_in(){
+  DDRD &= 0b11110000;
+}
+
+void lcd_44780_data_out(){
+  DDRD |= 0b00001111;
+}
+
 void lcd_44780_command(const uint8_t command){
   lcd_44780_write_byte(command, 1);
 }
 
+uint8_t lcd_44780_read_nibble(uint8_t type){
+  uint8_t result;
+  //one clock at 16MHz i 62.5 nS
+  PORTD = type|LCD_BIT_RW;
+  //min 40nS delay here code delay is enough
+  PORTD = LCD_BIT_E|type|LCD_BIT_RW;
+  //min 220nS delay holding E line active (just to be on the safe side)
+  asm volatile("nop\n\t"
+	       "nop\n\t"
+	       "nop\n\t"
+	       "nop\n\t"
+	       ::);
+  result = PIND & 0b1111;
+  PORTD = type|LCD_BIT_RW;
+  //The 10nS holding RS and R/W line handled by code delay
+  //Also the E cycle time of 500ns should be caused by other code delays
+
+  return result;
+}
+
 void lcd_44780_wait_for_display(){
-  lcd_44780_delay(8000);
+  char busy=1;
+  //lcd_44780_delay(8000);
+
+  lcd_44780_data_in();
+  
+  while(busy){
+ 
+    //500nS E cycle delay
+    asm volatile("nop\n\t"
+		 "nop\n\t"
+		 "nop\n\t"
+		 "nop\n\t"
+		 "nop\n\t"
+		 "nop\n\t"
+		 "nop\n\t"
+		 "nop\n\t"
+		 ::);
+    busy =  lcd_44780_read_nibble(LCD_CMD) & 0b1000;
+    //500nS E cycle delay
+    asm volatile("nop\n\t"
+		 "nop\n\t"
+		 "nop\n\t"
+		 "nop\n\t"
+		 "nop\n\t"
+		 "nop\n\t"
+		 "nop\n\t"
+		 "nop\n\t"
+		 ::);
+    lcd_44780_read_nibble(LCD_CMD);
+  }
+  
+  lcd_44780_data_out();
 }
 
 void lcd_44780_write_nibble(uint8_t data, uint8_t type){
-  PORTD = LCD_BIT_E|type|(data&0x0f);
+  //one clock at 16MHz i 62.5 nS
   PORTD = type|(data&0x0f);
+  //min 40nS delay here code delay is enough
+  PORTD = LCD_BIT_E|type|(data&0x0f);
+  //min 220nS delay holding E line active (just to be on the safe side)
+  asm volatile("nop\n\t"
+	       "nop\n\t"
+	       "nop\n\t"
+	       "nop\n\t"
+	       ::);
+  PORTD = type|(data&0x0f);
+  //The 10nS holding RS and R/W line handled by code delay
+  //Also the E cycle time of 500ns should be caused by other code delays
 }
 
 void lcd_44780_write_byte(uint8_t data, char is_command)
