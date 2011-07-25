@@ -56,5 +56,14 @@ void lcd_44780_print(const char * string);
  */
 void lcd_44780_write_byte(uint8_t data, char is_command);
 
+/** 
+ * Set the graphics for a custom character
+ * 
+ * NOTICE: This function leaves the text cursor inside the CGRAM
+ * 
+ * @param index The character index to set (range: 0-7).
+ * @param graphics The graphics for that character.
+ */
+void lcd_44780_set_custom_char(uint8_t index, const char graphics[8]);
 
 #endif //MOD_LCD_44780_H

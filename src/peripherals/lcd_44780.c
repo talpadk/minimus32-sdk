@@ -82,3 +82,16 @@ void lcd_44780_print(const char * string)
     string++;
   }
 }
+
+void lcd_44780_set_custom_char(uint8_t index, const char graphics[8]){
+  lcd_44780_command((index<<3)+64);
+  lcd_44780_write_byte(graphics[0], 0);
+  lcd_44780_write_byte(graphics[1], 0);
+  lcd_44780_write_byte(graphics[2], 0);
+  lcd_44780_write_byte(graphics[3], 0);
+  lcd_44780_write_byte(graphics[4], 0);
+  lcd_44780_write_byte(graphics[5], 0);
+  lcd_44780_write_byte(graphics[6], 0);
+  lcd_44780_write_byte(graphics[7], 0);
+
+}
