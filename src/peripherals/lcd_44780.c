@@ -19,17 +19,21 @@ void lcd_44780_command(const uint8_t command){
   lcd_44780_write_byte(command, 1);
 }
 
+void lcd_44780_wait_for_display(){
+  lcd_44780_delay(8000);
+}
+
 void lcd_44780_write_nibble(uint8_t data, uint8_t type){
   PORTD = LCD_BIT_E|type|(data&0x0f);
-  lcd_44780_delay(8000);
   PORTD = type|(data&0x0f);
-  lcd_44780_delay(5);
 }
 
 void lcd_44780_write_byte(uint8_t data, char is_command)
 {
   uint8_t type=LCD_DATA;
   if (is_command) type=LCD_CMD;
+
+  lcd_44780_wait_for_display();
 
   lcd_44780_write_nibble(data>>4, type);
   lcd_44780_delay(50);
