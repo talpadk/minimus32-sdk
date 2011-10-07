@@ -23,8 +23,6 @@
 #include "sys_clock.h"
 #include "timer1_clock.h"
 
-#include "minimus32.h"
-
 const char *HELLO = "Hello world\n";
 const char *CMD_UNKNOWN = "Command unknown!!!\n";
 
