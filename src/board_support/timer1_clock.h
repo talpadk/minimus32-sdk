@@ -68,6 +68,21 @@ typedef struct timer1_callback{
  */
 void timer1_clock_init(void);
 
+
+/** 
+ * Sets the tick for the next interrupts as an offset from the current tick
+ * 
+ * @param delay_ticks the number of ticks for the next interrupt, don't attemp to create a delay longer tha the 1ms loop period (16000 ticks) also tiny delay will fail due to code execution time.
+ */
+void timer1_sub_timer_b_delay(uint16_t delay_ticks); 
+
+/** 
+ * Unsets the interrupt generation for sub timer b
+ * 
+ */
+void timer1_sub_timer_b_unset(); 
+
+
 /** 
  * Registers a callback into the clock
  * 

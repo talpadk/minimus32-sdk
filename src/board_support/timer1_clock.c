@@ -100,8 +100,10 @@ void timer1_clock_init(){
   timer1_clock_walltimer.day = 0;
   timer1_clock_walltimer.freerunning_sec = 0;
 
-  OCR1AH = 62; //set OCR1A to 16000
-  OCR1AL = 128; 
+  ATOMIC_BLOCK(ATOMIC_FORCEON){
+    OCR1AH = 62; //set OCR1A to 16000
+    OCR1AL = 128; 
+  }
   
   TCCR1A = 0; //prescaler = 1 & count up to OCR1A function 
   TCCR1B = 1<<WGM12|1<<CS10;
@@ -109,6 +111,25 @@ void timer1_clock_init(){
   TIMSK1 = 1<<OCIE1A; //enable timer1 compare a int
 
 }
+
+void timer1_sub_timer_b_delay(uint16_t delay_ticks){
+  ATOMIC_BLOCK(ATOMIC_FORCEON){
+    delay_ticks += TCNT1L;
+    delay_ticks += ((uint16_t)TCNT1H)<<8;
+    if (delay_ticks>=16000) delay_ticks -= 16000;
+    OCR1BH = delay_ticks>>8;
+    OCR1BL = delay_ticks & 0xff;
+     
+    TIFR1  = 1<<OCF1B;  //clear any pending ints
+    TIMSK1 |= 1<<OCIE1B; //enable compare int
+  }
+    
+}
+
+void timer1_sub_timer_b_unset(){ 
+  TIMSK1 &= ~(1<<OCIE1B);
+}
+
 
 //does nothing if element already is in the chain, else insterts it
 void timer1_clock_insert_into_chain(timer1_callback *callback_struct){
