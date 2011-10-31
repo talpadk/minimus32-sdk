@@ -20,6 +20,7 @@
  * WARNING all timer1 function expects the global int to be enabled
  */
 
+#define TIMER1_TICKS_PER_US (16)
 
 /** 
  * A struct that keeps track of time since timer1_clock_init
