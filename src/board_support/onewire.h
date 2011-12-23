@@ -11,8 +11,15 @@
 
 #include <stdint.h>
 
+#define ONEWIRE_MATCH_ROM (0x55)
+
 typedef void(*onewire_action)(void);
 typedef uint8_t(*onewire_get_bit)(void);
+
+typedef struct{
+  uint8_t rom_code[7];
+  uint8_t crc;
+} onewire_rom_code;
 
 typedef enum {
   onewire_sending_reset=0,
@@ -30,6 +37,7 @@ typedef enum {
 } onewire_substate;
 
 void onewire_init(uint8_t interrupt_id, onewire_action pull_low, onewire_action release, onewire_get_bit get_bit);
+void onewire_reset(void);
 void onewire_interrupt(void);
 onewire_state onewire_get_state(void);
 void onewire_send_byte(uint8_t byte);

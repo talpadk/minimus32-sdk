@@ -1,6 +1,6 @@
 //#exe
 
-///Reads the temperatur and displays it on a LCD
+///Reads the temperatur using a DS18S20 and displays it on a LCD
 
 /**
  * @file
@@ -31,6 +31,7 @@
 #include "lcd_44780.h"
 #include "onewire.h"
 #include "timer1_clock.h"
+#include "ds18s20_blocking.h"
 
 const char backslash[8] = {0b00000000,
 			   0b00010000,
@@ -73,17 +74,17 @@ void writeHex(uint8_t byte){
   writeHexNibble(byte&0x0F);
 }
 
-uint8_t rom_code[8];
+onewire_rom_code rom_code;
 uint8_t rom_crc;
 void writeRomCode(void){
-  writeHex(rom_code[7]);
-  writeHex(rom_code[6]);
-  writeHex(rom_code[5]);
-  writeHex(rom_code[4]);
-  writeHex(rom_code[3]);
-  writeHex(rom_code[2]);
-  writeHex(rom_code[1]);
-  writeHex(rom_code[0]);
+  writeHex(rom_code.crc);
+  writeHex(rom_code.rom_code[6]);
+  writeHex(rom_code.rom_code[5]);
+  writeHex(rom_code.rom_code[4]);
+  writeHex(rom_code.rom_code[3]);
+  writeHex(rom_code.rom_code[2]);
+  writeHex(rom_code.rom_code[1]);
+  writeHex(rom_code.rom_code[0]);
 }
 
 uint8_t calculateCRC(uint8_t *buffer, uint8_t length){
@@ -106,10 +107,31 @@ uint8_t calculateCRC(uint8_t *buffer, uint8_t length){
 }
 
 
+int16_t temp=0;
+
+void printTemp(void){
+  int i;
+  int16_t tmp=temp;
+  char buffer[8];
+  buffer[7]=0;
+  if (tmp&1) buffer[6]='5';
+  else buffer[6]='0';
+  buffer[5]='.';
+  tmp=tmp>>1;
+    
+  for (i=4; i>=0; i--){
+    buffer[i]=(tmp%10)+'0';
+    tmp /= 10;
+  }
+  lcd_44780_print(buffer);
+}
+
 int main(){
   char anim=0;
   char msg=0;
   int i=0, j=0;
+  ds18s20_scratchpad scratchpad;
+
   onewire_state bus_state;
 
   watchdog_disable();
@@ -135,44 +157,47 @@ int main(){
   
   onewire_start_read_byte();
   onewire_wait_idle();
-  rom_code[0]=onewire_get_buffer();
+  rom_code.rom_code[0]=onewire_get_buffer();
 
   onewire_start_read_byte();
   onewire_wait_idle();
-  rom_code[1]=onewire_get_buffer();
+  rom_code.rom_code[1]=onewire_get_buffer();
 
   onewire_start_read_byte();
   onewire_wait_idle();
-  rom_code[2]=onewire_get_buffer();
+  rom_code.rom_code[2]=onewire_get_buffer();
   
   onewire_start_read_byte();
   onewire_wait_idle();
-  rom_code[3]=onewire_get_buffer();
+  rom_code.rom_code[3]=onewire_get_buffer();
 
   onewire_start_read_byte();
   onewire_wait_idle();
-  rom_code[4]=onewire_get_buffer();
+  rom_code.rom_code[4]=onewire_get_buffer();
   
   onewire_start_read_byte();
   onewire_wait_idle();
-  rom_code[5]=onewire_get_buffer();
+  rom_code.rom_code[5]=onewire_get_buffer();
 
   onewire_start_read_byte();
   onewire_wait_idle();
-  rom_code[6]=onewire_get_buffer();
+  rom_code.rom_code[6]=onewire_get_buffer();
   
   onewire_start_read_byte();
   onewire_wait_idle();
-  rom_code[7]=onewire_get_buffer();
+  rom_code.crc=onewire_get_buffer();
 
 
-  rom_crc = calculateCRC(rom_code, 7);
+  rom_crc = calculateCRC(rom_code.rom_code, 7);
 
   while (1){
     lcd_44780_command(LCD_44780_GOTO_CMD);    
     switch (msg){
     case 0:
       lcd_44780_print("  DS18S20 Demo  ");
+      if (i==0){
+	ds18s20_blocking_start_conversion(&rom_code);
+      }
       break;
     case 1:
       lcd_44780_print("CRC+ROM Code:   ");
@@ -181,11 +206,17 @@ int main(){
       writeRomCode();
       break;
     case 3:
-      if (rom_crc==rom_code[7]) lcd_44780_print("ROM CRC: OK     ");
+      if (rom_crc==rom_code.crc) lcd_44780_print("ROM CRC: OK     ");
       else                      lcd_44780_print("ROM CRC: FAILED!");
       break;
     case 4:
       lcd_44780_print(" TCurr  TFilter ");
+      lcd_44780_command(LCD_44780_GOTO_CMD+64);  
+      if (i==0){
+	ds18s20_blocking_read_scratchpad(&rom_code, &scratchpad);
+	temp = (scratchpad.temperature_msb<<8)+scratchpad.temperature_lsb;
+	printTemp();
+      }
       break;
     }
     i++;
@@ -195,26 +226,22 @@ int main(){
       i=0;
     }
 
-    lcd_44780_command(LCD_44780_GOTO_CMD+64);
+
 
     bus_state = onewire_get_state();
     if (bus_state == onewire_error_presence_pulse_missing){
+      lcd_44780_command(LCD_44780_GOTO_CMD+64);
       lcd_44780_print(" Presence ERROR ");
     }
     else {
-      if (bus_state == onewire_idle) {
-	//readAddress();
-      }
-
-
       //Show spinning anim
+      lcd_44780_command(LCD_44780_GOTO_CMD+64+15);
       j++;
       if (j>30){
 	anim++;
 	if (anim>3) anim = 0;
 	j=0;
       }
-      lcd_44780_write_byte(' ', 0);
       
       switch (anim){
       case 0:

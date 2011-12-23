@@ -30,14 +30,14 @@ int main(){
 
   while (1){
     i=0;
-    for (j=0; j<10; j++){
+    for (j=0; j<100; j++){
       PORTC = 0b10111111;
       while (!(PINC&0b01000000)){i++;}   
       PORTC = 0b00111111;
       //      while (PINC&0b01000000){i++;}
-            for (k=0; k<100; k++){ }
+      for (k=0; k<200; k++){ }
     }
 
-    led_blue(i>=77);
+    led_blue(i>=605);
   }
 }

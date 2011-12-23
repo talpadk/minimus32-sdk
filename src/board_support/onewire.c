@@ -179,17 +179,21 @@ ISR(TIMER1_COMPB_vect)
   }
 }
 
+void onewire_reset(void){
+  bit_timer_ = 500*TIMER1_TICKS_PER_US;
+  state_     = onewire_sending_reset;
+  substate_  = onewire_pulling_low;
+  onewire_sleep_action();
+  (*pull_low_)();
+}
+
 void onewire_init(uint8_t interrupt_id, onewire_action pull_low, onewire_action release, onewire_get_bit get_bit){
   interrupt_id_ = interrupt_id;
   pull_low_ = pull_low;
   release_ = release;
   get_bit_ = get_bit;
 
-  bit_timer_ = 500*TIMER1_TICKS_PER_US;
-  state_     = onewire_sending_reset;
-  substate_  = onewire_pulling_low;
-  onewire_sleep_action();
-  (*pull_low)();
+  onewire_reset();
 }
 
  //Handles the edge interrupts
