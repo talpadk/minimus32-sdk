@@ -1,1 +1,1 @@
-sudo apt-get install doxygen graphviz gcc-avr avr-libc
+sudo apt-get install doxygen graphviz gcc-avr avr-libc libusb-dev
