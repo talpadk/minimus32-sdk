@@ -18,6 +18,7 @@
 #include "sys_clock.h"
 #include "lcd_44780.h"
 
+#include "sin64.h"
 
 void initPorts(void){
   //PB0=chipsel, PB1=clk, PB2=data out, PB4=reset
@@ -117,6 +118,23 @@ void writeByte(uint8_t byte, char isCommand){
   }
 }
 
+void fastData(uint8_t data){
+  PORTB |= 1<<2;
+  PORTB |= 1<<1;
+  PORTB &= ~(1<<1);
+
+  //Master, MSB first, clock low=idle, sample on rising edge, divide the clock by 4
+  SPCR = 0b01010000;
+
+  SPDR = data;
+
+  //Wait for transfer done
+  while (!(SPSR&1<<SPIF)){}
+  //SPI off
+  SPCR = 0;
+}
+
+
 void lcdInit(void){
   uint16_t i;
   lcdClk(0);
@@ -130,44 +148,86 @@ void lcdInit(void){
 
    writeByte(INVON,1);
   writeByte(COLMOD,1);
-  writeByte(0x02,0);
+  //writeByte(0x02,0); //8-BIT
+  writeByte(0x03,0); //12-BIT
 
   writeByte(MADCTL,1);
   //  writeByte(0xC8,0);
   writeByte(0x10,0);
 
   writeByte(SETCON,1);
-  //  writeByte(0x30,0);
-  writeByte(60,0);
+  //writeByte(0x30,0);
+  writeByte(56,0);
 
   writeByte(DISPON,1);
+}
 
 
-  /*  writeByte(OSCON,1);
-  // Sleep out
-  writeByte(SLPOUT,1);
-  //Now turn on all the voltage regulators.
-  // Power control
-  writeByte(PWRCTR,1);
-  writeByte(0x0f,0);
+const uint16_t band[16]={0x000, 0x222, 0x333, 0x555, 0x666, 0x777, 0x999, 0xaaa, 0xbbb, 0xccc, 0xdddd, 0xeee, 0xeee, 0xfff, 0xfff, 0xfff};
+
+uint16_t bands[132];
+
+void drawBand(uint8_t y, uint16_t mask){
+  uint8_t i;
+
+  for (i=0; i<16; i++){
+    bands[y++] |= band[i]&mask;
+  }
+  for (i=15; i<16; i--){
+    bands[y++] |= band[i]&mask;
+  }
+}
+
+uint8_t calcSinPos(uint8_t offset){
+  uint8_t result=65;
+  int16_t tmp=offset;
+  if (tmp>=128) { tmp = 255-tmp; }
+
+  if (tmp>63) {
+    tmp = sin64[127-tmp];
+  }    
+  else {
+    tmp= sin64[tmp];
+  }
   
-  
-  writeByte(DISON, 1);*/
+  tmp = tmp*(60-16)/255;
 
+  if (offset>=128){ tmp=-tmp; }
+
+
+
+  return (66-16)+tmp;
 }
 
 int main(){
   uint8_t x,y;
-  uint8_t colour;
+  uint8_t a,b,c;
+  uint16_t colour;
+
+  uint8_t rPos=10;
+  uint8_t gPos=50;
+  uint8_t bPos=90;
+
+
   watchdog_disable();
   minimus32_init();
-  //clock_prescale_none();
+  clock_prescale_none();
 
   initPorts();
   lcdInit();
 
   colour=0;
+
   while (1){
+    rPos++;
+    gPos-=2;
+    bPos+=3;
+    for(y=0; y<132; y++){
+      bands[y]=0;
+    }
+    drawBand(calcSinPos(rPos),0xf00);
+    drawBand(calcSinPos(gPos),0xf0);
+    drawBand(calcSinPos(bPos),0xf);
     /*    writeByte(DISPON,1);
     for (i=0; i<300000; i++){}
     writeByte(DISPOFF,1);
@@ -180,10 +240,18 @@ int main(){
     writeByte(131,0);
     writeByte(RAMWR,1);
     for (y=0; y<132; y++){
-      for (x=0; x<132; x++){
-	writeByte(colour,0);
+      colour = bands[y];
+      //RRRRGGGGBBBB
+      a=0xff & (colour>>4); //RG
+      b=((colour & 0xf)<<4)|(0x0f&(colour>>8)); //BR
+      c=colour & 0xff; //GB
+      
+      for (x=0; x<132/2; x++){
+	fastData(a);
+	fastData(b);
+	fastData(c);
       }
-      colour++;
+      //colour++;
     }
   }
 }
