@@ -13,3 +13,23 @@ $linker = $compiler;
 $ldflags = "-mmcu=atmega32u2 ";
 
 $testProgram = "./upload_and_test.sh ";
+
+sub autoFunction
+{
+  my $dirName = $_[0];
+  my $name = $_[1];
+  my $workingDir = $_[2];
+  my $utils = getcwd().'/utils';
+
+
+  chdir($dirName);
+  my $retVal = system("UTILS_PATH=$utils make -sqf $name")>>8;
+  if ($retVal==1) {
+      $rescanFiles = 1;
+      system("UTILS_PATH=$utils make -sf $name");
+  }
+  chdir($workingDir);
+
+}
+
+$autoProcessingRef = \&autoFunction;
