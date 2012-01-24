@@ -15,10 +15,27 @@
 
 #include "minimus32.h"
 #include "watchdog.h"
+#include "timer1_clock.h"
 #include "sys_clock.h"
 #include "lcd_44780.h"
 
+
+uint8_t power=0;
+void boosterRegulate(void *data){
+  //led_blue_toggle();
+  if (ACSR & 1<<ACO){
+    if (power<20) power++;
+  }
+  else {
+    power -= 1;
+    if (power>200) power=0;
+  }
+  OCR0A=255-power;
+  
+}
+
 #include "sin64.h"
+
 
 void initPorts(void){
   //PB0=chipsel, PB1=clk, PB2=data out, PB4=reset
@@ -200,6 +217,9 @@ uint8_t calcSinPos(uint8_t offset){
 }
 
 int main(){
+  uint8_t *ACMUX = (uint8_t *)0x7D; //Broken header files?
+
+  timer1_callback boosterRegulateCallBack;
   uint8_t x,y;
   uint8_t a,b,c;
   uint16_t colour;
@@ -215,6 +235,23 @@ int main(){
 
   initPorts();
   lcdInit();
+
+  
+
+  /* ===== DC-DC booster code ===== */
+  //comp setup
+  ACSR  = 1<<ACBG;
+  *ACMUX = 3-1; //select input
+
+  //pwm setup (fast pwm on OC0A), no clock divide
+  OCR0A = 255; //duty 255 == off
+  TCCR0A = 0xC3;
+  TCCR0B = 0x01;
+  DDRB |= 0b10000000;
+  
+  //Setup regulation loop
+  timer1_clock_init();
+  timer1_clock_register_callback(0, 1, 1, &boosterRegulate, 0, &boosterRegulateCallBack);
 
   colour=0;
 
