@@ -1,6 +1,6 @@
 //#exe
 
-///Reads the temperatur and displays it on a LCD
+///A small graphical demo for nokia LCD displays (6100 and others)
 
 /**
  * @file
@@ -8,17 +8,51 @@
  * @ingroup tests
  */
 
-
-
+/**
+ * @file   
+ * 
+ * Hardware:
+ *
+ * LCD connection 
+ *
+ * Vcc = LCD.Pin1 (Vcc digital (3.3V))
+ * 
+ * PB4 = LCD.Pin2 (\Reset)
+ * 
+ * PB2 = LCD.Pin3 (Data (MOSI))
+ * 
+ * PB1 = LCD.Pin4 (Clock)
+ * 
+ * PB0 = LCD.Pin5 (Chip select)
+ *
+ * Vcc = LCD.Pin6 (Vcc Display (3.3V))
+ * 
+ * LCD.Pin7 (???)
+ *
+ * GND = LCD.Pin8 (Gnd)
+ * 
+ * LCD.Pin9 (backlight catode (gnd/minus)), you might use a booster
+ *
+ * LCD.Pin10 (backlight anode (+6-7V)), you might use a booster
+ *
+ *
+ * Booster
+ * 
+ * PB7 = booster transistor drive
+ *
+ * PD4 = booster feed back
+ * 
+ */
 
 #include <avr/io.h>
+#include <avr/pgmspace.h> 
 
 #include "minimus32.h"
 #include "watchdog.h"
 #include "timer1_clock.h"
 #include "sys_clock.h"
 #include "lcd_44780.h"
-
+#include "bitfont_6x8.h"
 
 uint8_t power=0;
 void boosterRegulate(void *data){
@@ -196,7 +230,6 @@ void drawBand(uint8_t y, uint16_t mask){
 }
 
 uint8_t calcSinPos(uint8_t offset){
-  uint8_t result=65;
   int16_t tmp=offset;
   if (tmp>=128) { tmp = 255-tmp; }
 
@@ -207,7 +240,7 @@ uint8_t calcSinPos(uint8_t offset){
     tmp= sin64[tmp];
   }
   
-  tmp = tmp*(60-16)/255;
+  tmp = tmp*(55-16)/255;
 
   if (offset>=128){ tmp=-tmp; }
 
@@ -215,6 +248,66 @@ uint8_t calcSinPos(uint8_t offset){
 
   return (66-16)+tmp;
 }
+
+void drawChar(uint8_t x, uint8_t y, uint8_t character, const bitfont *font, uint16_t fg, uint16_t bg){
+  const uint8_t *bits = font->bits+((uint16_t)font->char_size)*((uint16_t)(character-font->start));
+  uint8_t currentByte;
+  uint8_t bitCount = font->width*font->height;
+  uint8_t bytePos;
+  uint16_t colourA, colourB;
+
+  //Set up region
+  writeByte(CASET, 1);
+  fastData(x);
+  fastData(x+font->width-1);
+  writeByte(PASET, 1);
+  fastData(y);
+  fastData(y+font->height-1);
+
+  //Send data 
+  writeByte(RAMWR,1);
+
+  bytePos=8;
+  currentByte = pgm_read_byte(bits++);
+  //  currentByte = 0b01010101;
+  while (bitCount!=0){
+    bitCount-=2;
+    if (currentByte & 128) colourA = fg;
+    else colourA = bg;
+    if (currentByte & 64) colourB = fg;
+    else colourB = bg;
+    bytePos-=2;
+    if (bytePos==0){
+      bytePos=8;
+      currentByte = pgm_read_byte(bits++);
+      //      currentByte = 0b01010101;
+    }
+    else {
+      currentByte = currentByte << 2;
+    }
+    /*    //RRRRGGGGBBBB
+      a=0xff & (colour>>4); //RG
+      b=((colour & 0xf)<<4)|(0x0f&(colour>>8)); //BR
+      c=colour & 0xff; //GB*/
+    //mono colors could be done using a look up table
+    fastData(0xff & (colourA>>4));
+    fastData(((colourA & 0xf)<<4)|(0x0f&(colourB>>8)));
+    fastData(colourB & 0xff);
+    /*    fastData(0);
+    fastData(0);
+    fastData(0);*/
+  }
+}
+
+void drawString(uint8_t x, uint8_t y, const char *string, const bitfont *font, uint16_t fg, uint16_t bg){
+  uint8_t character=*(string++);
+  while (character!=0){
+    drawChar(x,y, character, font, fg, bg);
+    x+=font->width;
+    character=*(string++);
+  }
+}
+
 
 int main(){
   uint8_t *ACMUX = (uint8_t *)0x7D; //Broken header files?
@@ -290,5 +383,7 @@ int main(){
       }
       //colour++;
     }
+
+    drawString ( (132-(6*11))/2 ,122,"Hello World", &bitfont_6x8, 0x0fff, 0x0000);
   }
 }
