@@ -14,10 +14,9 @@
  *
  * Hardware:<br>
  * 16x2 display wired according to LCD_HelloWorld.c<br>
- * PB4 must be wired to the TC77 chip select (CS).<br>
- * PB1 must be wired to the TC77 clock pin (CLK)<br>
- * PB3 (and optionally PB2(not used right now))
- * must be wired to the TC77 data pin (SI/O)<br>
+ * PC7 must be wired to the DS18S20 data pin (DQ).<br>
+ * DQ must be pulled high (4.7k Ohm)
+ * This example requires power to be supplied to the DS18S20, parasitic power is not supported (yet)
  * 
  */
 
