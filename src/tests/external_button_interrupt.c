@@ -58,28 +58,28 @@ int main(void) {                                   // program starts here
 	PORTD |= (1<<PD7);                         // pull-up resistor PD7
 	enable_external_interrupt_input(INT7, falling); // enable the external interrupt on PD7
 
-	while(1);
+	while(1);                                  // endless loop
 	return 0;                                  // just by principle. the program never comes this far
 }
 
 // Shortcut PD4 and GND to trigger INT5
 ISR(INT5_vect) {
-	// Disable the interrupt, and set timer to enable interrupt in 20 ms
-	disable_external_interrupt_input(INT5);
+	disable_external_interrupt_input(INT5);    // Disable the interrupt, and set timer to reenable the interrupt in 20 ms
+                                                   // Done to ensure debouncing from the buttom
 	timer1_clock_register_callback(0, 20, 0, &reenable_interrupt_INT5, 0, &reenable_interrupt_INT5_callback);
 	led_blue_toggle();                         // toggle the onboard blue led
 }
 
 // Shortcut PD7 and GND to trigger INT7
 ISR(INT7_vect) {
-	// Disable the interrupt, and set timer to enable interrupt in 20 ms
-	disable_external_interrupt_input(INT7);
+	disable_external_interrupt_input(INT7);    // Disable the interrupt, and set timer to enable interrupt in 20 ms
+                                                   // Done to ensure debouncing from the buttom
 	timer1_clock_register_callback(0, 20, 0, &reenable_interrupt_INT7, 0, &reenable_interrupt_INT7_callback);
-	blink_callback_enabled = !blink_callback_enabled;
+	blink_callback_enabled = !blink_callback_enabled;  // Switch from enabled di disabled or back
 	if (blink_callback_enabled) {
-		timer1_clock_unregister_callback(&blink_callback);
+		timer1_clock_unregister_callback(&blink_callback); // unrigister the callback, to stop the onboard red led from blinking
 		led_red(0);
 	} else {
-		timer1_clock_register_callback(0, 500, 1, &blink, 0, &blink_callback);
+		timer1_clock_register_callback(0, 500, 1, &blink, 0, &blink_callback); // register the callback, to make the onboard red led blink again
 	}
 }
