@@ -10,8 +10,8 @@
 
 /**
  * HW setup:
- * Connect an external button between GND and PD4
- * Connect an external button between GND and PD7
+ * Connect an external button between GND and PD4 (toggles onboard blue led on/off)
+ * Connect an external button between GND and PD7 (toggles wether the onboard red led blinks or not)
  */
 
 #include <avr/io.h>
@@ -28,11 +28,11 @@ unsigned int blink_callback_enabled = 0;
 timer1_callback reenable_interrupt_INT5_callback;
 timer1_callback reenable_interrupt_INT7_callback;
 
-void reenable_interrupt_INT5() {
+void reenable_interrupt_INT5(void *data) {
 	enable_external_interrupt_input(INT5, falling);
 }
 
-void reenable_interrupt_INT7() {
+void reenable_interrupt_INT7(void *data) {
 	enable_external_interrupt_input(INT7, falling);
 }
 
