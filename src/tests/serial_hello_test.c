@@ -31,7 +31,7 @@ int main(void) {
   minimus32_init();
   clock_prescale_none();
 
-  async_serial_init();
+  async_serial_init(SERIAL_SPEED_9600);
 
   sei(); //global int enable
 
