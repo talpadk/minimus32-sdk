@@ -1,0 +1,348 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+
+
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+  <title>ATmega library for SD cards</title>
+</head><body style="color: rgb(0, 0, 0); background-color: rgb(238, 255, 255);" link="#000099" vlink="#990099" alink="#000099">
+<div style="text-align: center;"><big><big><span style="font-weight: bold;">ATmega library for SD cards</span></big></big><br>
+<big><big><span style="font-weight: bold;"><small><small>(Last modified
+21 Aug 11)</small></small></span></big></big><br>
+<big><big><span style="font-weight: bold;"></span></big></big></div>
+<big><big><span style="font-weight: bold;"></span></big></big>
+<big><br>
+<small>This code provides a generic set of routines for accessing an SD
+card from an AVR device.&nbsp; The routines are target-independent;
+they do not know about or depend on any hardware characteristics of the
+target design.&nbsp; All of the target-dependent hardware accesses are
+done in the host code (your program).&nbsp; Functions needed by the
+library code are made available through a special routine called
+sd_register().&nbsp; Your code must invoke sd_register() with a pointer
+to a structure containing pointers to the hardware-specific functions
+needed.&nbsp; This may sound complicated but it is actually
+straightforward.&nbsp; I've provided a demo program and examples below
+that show
+how to use the library.<br>
+<br>
+This code is based on work done by Jesper Hansen
+&lt;jesper@redegg.net&gt; and published on the web.&nbsp; See the
+sdcard.h and sddemo.c files for details on derivation.<br>
+<br>
+<span style="font-weight: bold;">(21 Aug 2011)</span>&nbsp; I
+discovered several errors in my original sdcard code.&nbsp; I have
+updated the .zip file below with new versions of the associated
+files.&nbsp; This version supports only V1 SD cards (&lt; 4GB
+capacity).&nbsp; It should allow you to run multiple devices on the
+same SPI bus as the SD card, but I have not tested that yet.<br>
+<br>
+I believe you should be able to implement such a feature by writing the
+associated select() and deselect() routines so each uses the correct
+SPI control and status settings for the associated device, saving and
+restoring those registers when appropriate. For example, the select()
+routine for your SD card would save a copy of the SPCR and SPSR
+registers, update those registers with values needed for communications
+with the SD card, then enable the SD card.&nbsp; Similarly, the
+deselect() routine would overwrite the SPCR and SPSR registers <br>
+with the values previously saved by the select() routine.&nbsp; In this
+way, exchanging data with the SD card would not corrupt settings for
+other SPI devices sharing the same bus.<br>
+<br>
+</small></big>
+<hr style="width: 100%; height: 2px;"><big><small><br>
+<span style="font-weight: bold;">Using the library</span><br>
+To use the library, download the .zip file below and unzip it in a
+suitable folder.&nbsp; I keep all of my library object files in
+c:\projects\library and all of my common header files in
+c:\projects\include; feel free to adjust these locations as appropriate.<br>
+<br>
+Open an AVRStudio4 project and assign an appropriate device to your
+project.&nbsp; The sddemo project below uses an ATmega328p so you can
+use that device if you want to rebuild the sddemo project without
+change.&nbsp; Use the Projects/Configuration Options window to assign
+the operating frequency of your target hardware (F_CPU); my sample
+project used 8.0 MHz.&nbsp; Also set the paths to your Include
+directory and your Library directory.<br>
+<br>
+Note that my sddemo project uses a custom UART library, which is not
+(yet) available.&nbsp; You can either create your own UART routines and
+hook them into STDIN, STDOUT, and STDERR (check the <a href="http://www.seanet.com/%7Ekarllunt/www.avrfreaks.net">AVR Freaks site</a> for examples) or you can
+just comment out any code that refers to the UART.&nbsp; This will
+result in a project that won't be very useful, since you won't be able
+to interact with the SD card, but you will be able to compile and link,
+confirming that your library is properly installed.<br>
+<br>
+Build your project and download it into your target device.&nbsp; Hook
+up a serial terminal and start TeraTerm Pro or other comm program; set
+for 38400, 8N1.&nbsp; Reset the target and you should see a short
+display providing the block length, capacity in sectors, and capacity
+in bytes of your card.&nbsp; A simple menu of commands allows you to
+display selected sectors, read the CSD registers, and erase a given
+sector (write to 0xff).<br>
+<br>
+<br>
+<span style="font-weight: bold;">Customizing the code</span><br>
+The library's sd_register() routine accepts a pointer to a structure
+holding three or four callback functions.&nbsp; Three of these
+functions are required; they are select(), deselect(), and
+xchg().&nbsp; Respectively, these enable the SD card, disable the SD
+card, and exchange a byte of data with the SD card.&nbsp; Your code
+must provide these three hardware-dependent functions so the library
+can interact with your SD card.<br>
+<br>
+A fourth function, power() is optional and can be used to apply/remove
+power to the SD card.&nbsp; If your hardware does not support such a
+function, simply pass 0 as the pointer to the power() function when
+invoking sd_register().<br>
+<br>
+Since everything that is hardware-dependent lives in your host code,
+you can control which I/O lines talk to the SD card.&nbsp; You can even
+use the library to support accessing multiple SD cards, should you
+need, for example, an A: drive and a B: drive on your project.&nbsp;
+You just
+need to keep a local variable that tracks the current drive, and add
+code to the four functions that use this variable to determine which
+I/O lines to toggle when the library tries to access an SD card.<br>
+<br>
+To allow the SD card to power-up cleanly, allow a considerable delay
+(up to a second) following power-up of the SD card before invoking
+sd_register().&nbsp; If you have some way of monitoring the quality of
+the power to the SD card, even better.<br>
+<br>
+Note that invoking sd_register() always causes the SD library to
+initialize your SD card.&nbsp; The assumption is that you will only
+call sd_register() after the card's power supply is stable.&nbsp;
+Therefore, sd_register() invokes power() directly, then performs the
+power-up initialization of the SD card.&nbsp; If your target does not
+have a power control line for the SD card, sd_register() will still
+perform the initialization.&nbsp; The initialization issues CMD0 to the
+card to force it to an idle state, then issues a sequence of CMD55 -
+ACMD41 commands, looking for a ready response.&nbsp; The sd_register()
+routine will NOT work with MMC cards and will NOT work with V2 SD cards
+(4GB or higher).<br>
+<br>
+If you must invoke the power() function prior to calling sd_register(),
+go ahead.&nbsp; sd_register() will still invoke power() directly and
+will still initialize the SD card.<br>
+<br>
+The sd_register() routine returns SDCARD_OK if the initialization
+succeeded.&nbsp; Error values include SDCARD_NO_DETECT if the SD card
+never reported an idle state in response to CMD0 and SDCARD_TIMEOUT if
+the SD card never issued a ready response after a large number of CMD55
+- ACMD41 polls.<br>
+<br>
+When you invoke sd_register(), you must set up the SPI to use a clock
+frequency between 100 kHz and 400 kHz.&nbsp; If sd_register() reports
+that initialization succeeded, you are then free to boost the SPI clock
+frequency, up to 25 MHz.<br>
+<br>
+<br>
+<span style="font-weight: bold;"><span style="font-weight: bold;">A
+sample implementation</span></span><br>
+Here are snippets from the sddemo.c program showing how I implemented
+the four SD card functions needed by the library.&nbsp; These should
+give a clear example of how you can set up your own functions.<br>
+<br>
+<span style="font-family: monospace;">//
+====================================================</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">/*</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; The following
+defines are target-dependent and could vary, based on your</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; chosen MCU and
+hardware design.&nbsp; The values shown here are for an</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; ATmega328p with SS
+(PB2) used as chip-select (active-low).&nbsp; I've also</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; wired PD4 as a
+power-control line for the SD card.&nbsp; If your design</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; doesn't require
+power-control, see further comments below for setting</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; up your callback
+functions.</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*/</span><br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<span style="font-family: monospace;">/*</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; Define the bits
+used by the SPI for target device.</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*/</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">#define&nbsp;
+MOSI_BIT&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 3</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">#define&nbsp;
+MISO_BIT&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 4</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">#define&nbsp;
+SCK_BIT&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 5</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">#define&nbsp;
+SS_BIT&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp; 2</span><br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<span style="font-family: monospace;">/*</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; Define the port and
+DDR used by the SPI for target device.</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*/</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">#define&nbsp;
+SPI_PORT&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; PORTB</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">#define&nbsp;
+SPI_DDR&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp; DDRB</span><br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<span style="font-family: monospace;">/*</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; Define the port,
+DDR, and bit used as chip-select for the</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; SD card on the
+target device.</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*/</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">#define&nbsp;
+SD_CS_PORT&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; PORTB</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">#define&nbsp;
+SD_CS_DDR&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; DDRB</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">#define&nbsp;
+SD_CS_BIT&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; 2</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">#define&nbsp;
+SD_CS_MASK&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; (1&lt;&lt;SD_CS_BIT)</span><br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<span style="font-family: monospace;">/*</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; (Optional)&nbsp;
+Define the port, DDR, and bit used as a power-control</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; line for the SD
+card on the target device.</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; If your hardware
+does not provide a power-control line to the SD</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; card, you can omit
+these #defines.</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*/</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">#define&nbsp;
+SD_PWR_PORT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PORTD</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">#define&nbsp;
+SD_PWR_DDR&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; DDRD</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">#define&nbsp;
+SD_PWR_BIT&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; 4</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">#define&nbsp;
+SD_PWR_MASK&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (1&lt;&lt;SD_PWR_BIT)</span><br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<span style="font-family: monospace;">//
+====================================================</span><br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<span style="font-family: monospace;">/*</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp;
+my_sd_select&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; select (enable) the SD card</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*/</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">static&nbsp; void&nbsp;
+my_sd_select(void)</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">{</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; SD_CS_PORT =
+SD_CS_PORT &amp; ~SD_CS_MASK;</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">}</span><br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<span style="font-family: monospace;">/*</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp;
+my_sd_deselect&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; deselect (disable) the SD
+card.</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*/</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">static&nbsp; void&nbsp;
+my_sd_deselect(void)</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">{</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; SD_CS_PORT =
+SD_CS_PORT | SD_CS_MASK;</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">}</span><br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<span style="font-family: monospace;">/*</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp;
+my_sd_xchg&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; exchange a byte of data with
+the SD card via host's SPI bus</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*/</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">static&nbsp; unsigned char&nbsp;
+my_sd_xchg(unsigned char&nbsp; c)</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">{</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; SPDR = c;</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; while ((SPSR
+&amp; (1&lt;&lt;SPIF)) == 0)&nbsp; ;</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; return&nbsp;
+SPDR;</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">}</span><br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<span style="font-family: monospace;">/*</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp;
+my_sd_power&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; control power to the SD card
+(optional routine)</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; If your hardware
+does not support power control of the SD card, omit</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; this routine.</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*/</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">static&nbsp; void&nbsp;
+my_sd_power(unsigned char&nbsp; v)</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">{</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; if
+(v)&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; // if turning
+on SD card...</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; {</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; SD_PWR_PORT = SD_PWR_PORT &amp; ~SD_PWR_MASK;</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; }</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;
+else&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; // no, turning
+off SD card...</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; {</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; SD_PWR_PORT = SD_PWR_PORT | SD_PWR_MASK;</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; }</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">}</span><br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<span style="font-family: monospace;">//
+========================================================================</span><br style="font-family: monospace;">
+<br>
+<br>
+And here is code showing how to load up the function pointers and pass
+them into the SD card library.<br>
+<br>
+<span style="font-family: monospace;">/*</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; Fill the callback
+structure with pointers to the target-dependent SD card support</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; functions.</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; If your hardware
+does not support a power-control line, use 0 for the .power callback</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*&nbsp; pointer.</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;*/</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;
+my_callbacks.select = &amp;my_sd_select;</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;
+my_callbacks.deselect = &amp;my_sd_deselect;</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;
+my_callbacks.xchg = &amp;my_sd_xchg;</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;
+my_callbacks.power = &amp;my_sd_power;</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;
+result = sd_register(&amp;my_callbacks);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+// call the library's register
+function to connect to the routines</span><br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<br>
+<br>
+<span style="font-weight: bold;">The files</span><br>
+<a href="http://www.seanet.com/%7Ekarllunt/sddemo.zip">Here</a> is a zip file containing the sddemo
+program and the source and object module for the SD card support
+library.&nbsp; The sddemo program, with my UART library, takes just
+less than 7,600 bytes of code space.<br>
+<br>
+</small></big><br>
+<br>
+<a href="http://www.seanet.com/%7Ekarllunt/index.html">Home</a><br>
+<br>
+<br>
+<br>
+<big><small><br>
+<br>
+</small></big>
+</body></html>
