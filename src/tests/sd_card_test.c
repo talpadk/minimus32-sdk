@@ -36,6 +36,7 @@
 #include "timer1_clock.h"
 #include "vt100_codes.h"
 #include "async_serial.h"
+#include "spi.h"
 #include "sdcard.h"
 
 #define POWER_ON_DELAY (11)
@@ -66,16 +67,9 @@ void blink(void *data){
 void selectSDCard(){ PORTB &= ~(1<<PB0); }
 void deselectSDCard(){ PORTB &= (1<<PB0); }
 
-unsigned char exchangeBytesWithSDCard(unsigned char val){
-  //Assumes that the SPI bus is always returned in an idle state before calling this
-  SPDR = val;
-  while (!(SPSR & (1<<SPIF))){};
-  return SPDR;
-}
-
 SD_CALLBACKS mySDCardIO = {
   selectSDCard,
-  exchangeBytesWithSDCard,
+  spi_io,
   deselectSDCard,
   0
 };
@@ -150,20 +144,16 @@ int main(void) {
   clock_prescale_none();
 
   sei(); //global int enable
-  //Setup a blink pattern indicating a working MCU
-  timer1_clock_init();
-  timer1_clock_register_callback(0, 100, 1, &blink, 0, &blink_call_back);
 
   async_serial_init(SERIAL_SPEED_9600);
 
-  
-  DDRB &= ~0b00001000; //Set PB3 (MISO) as input
-  DDRB |= 0b00000111; //Set PB0 (SS), PB1 (SCLK) and PB2 (MOSI) as output
+  spi_obtain_bus(1); //technically not needed since there are just one user of the bus
+  spi_config_io_for_master_mode();
+  spi_setup(SPI_DIVIDER_128, 0);
 
-  //Enable SPI, MSB first, Master mode, setup on falling clock edge, sample on rising rising
-  //Clock speed Fosc/128
-  SPCR = (1<<SPE) + (0<<DORD) + (1<<MSTR) + (0<<CPOL) + (0<<CPHA) + 3;
-  SPSR = 0; //Clear the double speed register
+  //Setup a blink pattern indicating a working MCU
+  timer1_clock_init();
+  timer1_clock_register_callback(0, 100, 1, &blink, 0, &blink_call_back);
 
   while (blinkTimer!=POWER_ON_DELAY){} //wait for stable power supply at the SD card
 
@@ -176,7 +166,7 @@ int main(void) {
       die("SD-card register failed!!!");
   }
 
-  if (sd_readsector(0, &block)!=SDCARD_OK){
+  if (sd_readsector(0, block)!=SDCARD_OK){
       die("SD-card read failed!!!");
   }
 
@@ -198,6 +188,6 @@ int main(void) {
 
   while (1) {
   }
-
+  spi_release_bus(); //technically not needed since there are just one user of the bus
   return 0;
 }
