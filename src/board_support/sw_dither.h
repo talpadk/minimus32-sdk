@@ -7,6 +7,9 @@
  * @file
  * @author Visti Andresen
  * @ingroup bsp
+ *
+ * A more CPU fiendly alternative to pulse width modulation.
+ * Unlike PWM dithering does not generate a fixed frequency signal
  */
 
 
@@ -34,6 +37,13 @@ void sw_dither_init(sw_dither *dither, uint16_t max);
  */
 void sw_dither_set(sw_dither *dither, uint16_t power);
 
+/** 
+ * Animates the software dithering, call often (enough) and with a constant interval
+ * 
+ * @param dither the dither to update
+ * 
+ * @return returns true (1) if you should output a high value, false (0) if low
+ */
 static inline uint8_t sw_dither_animate(sw_dither *dither){
   dither->counter += dither->power;
   if (dither->counter >= dither->max){
