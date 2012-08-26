@@ -35,10 +35,16 @@
 #include "spi.h"
 #include "pcd8544.h"
 #include "sw_dither.h"
+#include "vertical_byte_font_6x8.h"
 
+#define STATE_LENGTH (100)
+#define GREY_HACK_STATE 3
 uint8_t bar_=0;
-sw_dither backlight;
+uint8_t state_=0;
+uint8_t lastState_=255;
+uint8_t stateTimer_=STATE_LENGTH;
 
+sw_dither backlight;
 void handleBackLight(void *data){
   if (sw_dither_animate(&backlight)) PORTB |= (1<<PB7);
   else PORTB &= ~(1<<PB7);
@@ -46,9 +52,44 @@ void handleBackLight(void *data){
 
 void blink(void *data){
   led_red_toggle();
-  pcd8544_test(bar_);
-  bar_++;
-  if (bar_==8) bar_=0;
+  switch (state_){
+  case 0:
+    if (lastState_!=state_){
+      pcd8544_fill_screen(0);
+      pcd8544_print(4,0, "MOVEING LINES", &vertical_byte_font_6x8);
+      pcd8544_print(0,1, "==============", &vertical_byte_font_6x8);
+      pcd8544_print(0,2, "Displays a", &vertical_byte_font_6x8);
+      pcd8544_print(0,3, "pattern that", &vertical_byte_font_6x8);
+      pcd8544_print(0,4, "tests every", &vertical_byte_font_6x8);
+      pcd8544_print(0,5, "pixel", &vertical_byte_font_6x8);
+    }
+    break;
+  case 1:
+    pcd8544_test(bar_);
+    bar_++;
+    if (bar_==8) bar_=0;
+    break;
+  case 2:
+    if (lastState_!=state_){
+      pcd8544_fill_screen(0);
+      pcd8544_print(16,0, "4 COLOURS", &vertical_byte_font_6x8);
+      pcd8544_print(0,1, "==============", &vertical_byte_font_6x8);
+      pcd8544_print(0,2, "Fakes 4 grey", &vertical_byte_font_6x8);
+      pcd8544_print(0,3, "shades by", &vertical_byte_font_6x8);
+      pcd8544_print(0,4, "flickering", &vertical_byte_font_6x8);
+      pcd8544_print(0,5, "the display", &vertical_byte_font_6x8);
+    }
+    break;
+  }
+
+    
+    lastState_ = state_;
+  stateTimer_--;
+  if (stateTimer_==0){
+    state_++;
+    if (state_>GREY_HACK_STATE) state_=0;
+    stateTimer_=STATE_LENGTH;
+  }
 }
 
 void assertReset()   { PORTB &= ~(1<<PB5); }
@@ -68,8 +109,42 @@ pcd8544_io pcdIO = {
   desertCMD  
 };
 
+void greyScaleHack(uint8_t callNumber){
+  uint8_t x,colour,bits;
+
+  spi_obtain_bus(1);
+
+  pcdIO.assert_command();
+  pcdIO.assert_chip_delect();
+  
+  spi_setup(SPI_DIVIDER_4, 0); //4 Mhz @ 16Mhz
+  spi_io(PCD8544_CMD_SET_Y);
+  spi_io(PCD8544_CMD_SET_X);
+  pcdIO.desert_command();
+
+  colour=0;
+  for (x=0; x<84; x++){
+    if (colour>callNumber) bits=0xff;
+    else bits=0;
+    spi_io(bits);
+    spi_io(bits);
+    spi_io(bits);
+    spi_io(bits);
+    spi_io(bits);
+    spi_io(bits);
+
+    if ((x&7)==0)  colour++;
+    colour &= 3;
+  }
+  
+  pcdIO.desert_chip_select();   
+  spi_release_bus();
+}
+
 int main(void) { 
   uint16_t i,j;
+  uint8_t s;
+
   timer1_callback blink_call_back;
   timer1_callback backlight_call_back;
 
@@ -90,10 +165,18 @@ int main(void) {
   timer1_clock_register_callback(0, 1, 1, &handleBackLight, 0, &backlight_call_back);
 
   for (i=0; i<1024; i++){
-    for(j=0; j<1000; j++){}
+    for(j=0; j<2000; j++){}
     sw_dither_set(&backlight, i);
   } 
 
-  while (1) { }
+  //Show grey scale hack
+  while (1) {
+    while (state_==GREY_HACK_STATE){
+      greyScaleHack(s);
+      s++;
+      if (s>2) s=0;
+      for(j=0; j<7500; j++){}
+    }
+  }
   return 0;
 }

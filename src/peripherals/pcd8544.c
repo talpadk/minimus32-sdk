@@ -1,6 +1,7 @@
 #include "pcd8544.h"
-
 #include "spi.h"
+
+#include <avr/pgmspace.h> 
 
 pcd8544_io pcd8544_io_copy;
 
@@ -19,10 +20,11 @@ void pcd8544_init(pcd8544_io *io, uint8_t contrast){
   pcd8544_io_copy.assert_command     = io->assert_command;
   pcd8544_io_copy.desert_command     = io->desert_command;
 
+  spi_obtain_bus(1);
+
   pcd8544_io_copy.assert_command();
   pcd8544_io_copy.assert_chip_delect();
-  
-  spi_obtain_bus(1);
+
   spi_setup(SPI_DIVIDER_4, 0); //4 Mhz @ 16Mhz
 
   spi_io(PCD8544_CMD_FUNCTION_SET|PCD8544_CMD_BIT_EXTENDED);
@@ -42,10 +44,11 @@ void pcd8544_test(uint8_t pattern) {
   uint8_t i;
   pattern = 1<<pattern;
 
+  spi_obtain_bus(1);
+
   pcd8544_io_copy.assert_command();
   pcd8544_io_copy.assert_chip_delect();
   
-  spi_obtain_bus(1);
   spi_setup(SPI_DIVIDER_4, 0); //4 Mhz @ 16Mhz
   spi_io(PCD8544_CMD_SET_Y);
   spi_io(PCD8544_CMD_SET_X);
@@ -57,5 +60,65 @@ void pcd8544_test(uint8_t pattern) {
   pcd8544_io_copy.desert_chip_select();
 
   spi_release_bus();
+}
 
+void pcd8544_fill_screen(uint8_t pattern) {
+  uint8_t i;
+  spi_obtain_bus(1);
+
+  pcd8544_io_copy.assert_command();
+  pcd8544_io_copy.assert_chip_delect();
+  
+  spi_setup(SPI_DIVIDER_4, 0); //4 Mhz @ 16Mhz
+  spi_io(PCD8544_CMD_SET_Y);
+  spi_io(PCD8544_CMD_SET_X);
+  pcd8544_io_copy.desert_command();
+
+  for (i=0; i<250; i++) spi_io(pattern);
+  for (i=0; i<254; i++) spi_io(pattern);
+
+  pcd8544_io_copy.desert_chip_select();
+
+  spi_release_bus();
+}
+
+void pcd8544_print(uint8_t x, uint8_t yIndex, const char*string, const vertical_byte_font *font){
+  uint8_t data;
+  const uint8_t *bytes;
+  uint8_t width=font->width;
+  uint8_t height=font->height;
+  uint8_t i,j;
+  uint16_t charSize = font->width*font->height;
+  spi_obtain_bus(1);
+
+  pcd8544_io_copy.assert_chip_delect();
+  spi_setup(SPI_DIVIDER_4, 0); //4 Mhz @ 16Mhz
+
+  yIndex += PCD8544_CMD_SET_Y;
+  x += PCD8544_CMD_SET_X;
+
+  data=*string;
+  while (data){
+    bytes = font->bytes+((data-font->start)*charSize);
+
+    for (i=0; i<width; i++){
+      pcd8544_io_copy.assert_command();
+      spi_io(yIndex);
+      spi_io(x);
+      pcd8544_io_copy.desert_command();
+      
+      for (j=0; j<height; j++){
+	spi_io(pgm_read_byte(bytes++));
+      }
+      x++;
+    }
+    
+    string++;
+    data=*string;
+  }
+
+
+  pcd8544_io_copy.desert_chip_select();
+
+  spi_release_bus();
 }

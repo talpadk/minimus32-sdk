@@ -2,7 +2,7 @@
 #define MOD_PCD8544_H
 
 #include <stdint.h>
-
+#include "vertical_byte_font.h"
 
 #define PCD8544_CMD_FUNCTION_SET            (0x20)
 #define PCD8544_CMD_BIT_EXTENDED   (0x01)
@@ -36,7 +36,7 @@ typedef struct {
  * @note This function must be called within 100ms of the supply voltage going high.
  * 
  * @param io a pointer to the io functions should be used for 
- * @param contrast setting range 0-127, suggestion could be 96
+ * @param contrast setting range 0-127, suggestion could be 45
  */
 void pcd8544_init(pcd8544_io *io, uint8_t contrast);
 
@@ -46,5 +46,14 @@ void pcd8544_init(pcd8544_io *io, uint8_t contrast);
  * @param pattern the numer of the test range 0-7
  */
 void pcd8544_test(uint8_t pattern);
+
+void pcd8544_print(uint8_t x, uint8_t yIndex, const char *string, const vertical_byte_font *font);
+
+/** 
+ * Fills the screen with the given pattern byte
+ * 
+ * @param pattern call with 0 to clear screen
+ */
+void pcd8544_fill_screen(uint8_t pattern);
 
 #endif //MOD_PCD8544_H

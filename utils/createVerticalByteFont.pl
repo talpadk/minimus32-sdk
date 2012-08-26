@@ -95,17 +95,14 @@ sub printBit{
     }
     else {
 	print $cFile 'X';
-	$bufferByte |= 1;
+	$bufferByte |= 1<<$bufferBitNumber;
     }
     $bufferBitNumber++;
-    if ($bufferBitNumber==8){
+    if ($bufferBitNumber>7){
 	$buffer[++$#buffer]=$bufferByte;
 	$bufferByte = 0;
 	$bufferBitNumber = 0;
     }
-    else {   
-	$bufferByte = $bufferByte<<1;
-    }    
 }
 
 print $cFile '#include "'.$hFileName."\"\n#include <avr/pgmspace.h>\n\n";
