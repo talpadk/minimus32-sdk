@@ -1,0 +1,8 @@
+#Defines a font containing a subset of 7bit ASCII
+#!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
+input=6x8.ppm
+output=vertical_byte_font_6x8
+width=6
+height=1
+start=32
+end=126
