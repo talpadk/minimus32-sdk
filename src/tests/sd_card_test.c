@@ -7,23 +7,23 @@
  * @author Visti Andresen
  * @ingroup tests
  * 
- * Red  blinking             = Start up delay
- * Blue blinking, red  solid = Status OK 
- * Red  blinking, blue solid = An error has occurred
- *
+ * Red  blinking             = Start up delay<br>
+ * Blue blinking, red  solid = Status OK <br>
+ * Red  blinking, blue solid = An error has occurred<br>
+ *<br>
  * Hardware:<br>
- * The minimus must operate at 3.3V (or level shifters must be used)
- * The SD card must be supplied with 3.3V on SD.4 (Vcc) with enough current
- * The SD card must be connected to GND on SD.3 (Vss1) and SD.6 (Vss2)
- *
- * PB0 (SS)    -> SD.1 (CS)
- * PB1 (SCLK)  -> SD.5 (SCLK)
- * PB2 (MOSI)  -> SD.2 (DI)
- * PB3 (MISO)  <- SD.7 (DO)
+ * The minimus must operate at 3.3V (or level shifters must be used)<br>
+ * The SD card must be supplied with 3.3V on SD.4 (Vcc) with enough current<br>
+ * The SD card must be connected to GND on SD.3 (Vss1) and SD.6 (Vss2)<br>
+ *<br>
+ * PB0 (SS)    -> SD.1 (CS)<br>
+ * PB1 (SCLK)  -> SD.5 (SCLK)<br>
+ * PB2 (MOSI)  -> SD.2 (DI)<br>
+ * PB3 (MISO)  <- SD.7 (DO)<br>
  * 
- * Also the test program writes its output to the serial port of the minimus (9600 baud 8N1)
+ * Also the test program writes its output to the serial port of the minimus (9600 baud 8N1)<br>
  * Remember to use an appropriate level shifter from 3.3V to regular RS232 voltages
- * (or a 3.3V Blue Tooth serial module)
+ * (or a 3.3V Blue Tooth serial module)<br>
  *
  * @TODO update the code to increase the SPI bus speed
  */
@@ -65,7 +65,7 @@ void blink(void *data){
 }
 
 void selectSDCard(){ PORTB &= ~(1<<PB0); }
-void deselectSDCard(){ PORTB &= (1<<PB0); }
+void deselectSDCard(){ PORTB |= (1<<PB0); }
 
 SD_CALLBACKS mySDCardIO = {
   selectSDCard,
