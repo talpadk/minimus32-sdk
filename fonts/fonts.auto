@@ -1,0 +1,5 @@
+bitfont_6x8.c:	bitfont.h 6x8.font 6x8.ppm
+		perl $(UTILS_PATH)/createFont.pl 6x8.font
+
+vertical_byte_font_6x8.c:	vertical_byte_font.h 6x8_vertical_byte.font 6x8.ppm
+		perl $(UTILS_PATH)/createVerticalByteFont.pl 6x8_vertical_byte.font
