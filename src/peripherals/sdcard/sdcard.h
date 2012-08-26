@@ -42,6 +42,14 @@
 #define __SD_IF_H__
 
 
+/**
+ * @file   sdcard.h
+ * @author Jesper Hansen <jesper@redegg.net> 
+ * 
+ * @brief  A library for accesing SD cards
+ * @ingroup per
+ * 
+ */
 
 
 /*
