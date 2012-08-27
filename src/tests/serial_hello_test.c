@@ -41,6 +41,7 @@ int main(void) {
 
   async_serial_write_string(VT100_CURSOR_OFF);
   async_serial_write_string(VT100_CLEAR_SCREEN);
+  async_serial_write_string(VT100_CURSOR_HOME);
   async_serial_write_string("=== Hello world ===\r\n\r\nPress any key for the next screen.");
 
   while (1) {
@@ -48,7 +49,8 @@ int main(void) {
       tmp = async_serial_read_byte();
 
       async_serial_write_string(VT100_CLEAR_SCREEN);
-      async_serial_write_string("You send me a '");
+      async_serial_write_string(VT100_CURSOR_HOME);
+      async_serial_write_string("You sent me the character '");
       async_serial_write_byte(tmp);
       async_serial_write_byte('\'');
     }

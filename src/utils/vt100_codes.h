@@ -3,5 +3,6 @@
 
 extern const char *VT100_CLEAR_SCREEN;
 extern const char *VT100_CURSOR_OFF;
+extern const char *VT100_CURSOR_HOME;
 
 #endif
