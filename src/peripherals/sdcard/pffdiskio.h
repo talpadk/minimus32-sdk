@@ -33,7 +33,7 @@ DSTATUS disk_initialize (void);
 DRESULT disk_readp (BYTE*, DWORD, WORD, WORD);
 #endif
 #if _PFF_USE_WRITE
-DRESULT disk_writep (const BYTE*, DWORD);
+DRESULT disk_writep (BYTE*, DWORD);
 #endif
 
 #endif
