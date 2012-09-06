@@ -4,7 +4,7 @@
 /*-------------------------------------------------------------------------*/
 
 #include "pff.h"
-#include "diskio.h"
+#include "mmc_diskio.h"
 
 /*-------------------------------------------------------------------------*/
 /* Platform dependent macros and functions needed to be modified           */
