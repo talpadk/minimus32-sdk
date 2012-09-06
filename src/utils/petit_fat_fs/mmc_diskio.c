@@ -13,9 +13,10 @@
 #include <avr/io.h>			/* Device include file */
 #include "suart.h"
 
-//TODO Talpa: These two (SELECT & DESELECT) should be changed to fit the minimus32...
-#define SELECT()	PORTB &= ~_BV(3)	/* CS = L */
-#define	DESELECT()	PORTB |=  _BV(3)	/* CS = H */
+//#define SELECT()	PORTB &= ~_BV(3)	/* CS = L */
+//#define	DESELECT()	PORTB |=  _BV(3)	/* CS = H */
+#define SELECT() { PORTB &= ~(1<<PB0); }
+#define DESELCT() { PORTB |= (1<<PB0); }
 
 #define	MMC_SEL		!(PORTB &  _BV(3))	/* CS status (true:CS == L) */
 #define	FORWARD(d)	xmit(d)				/* Data forwarding function (Console out in this example) */
