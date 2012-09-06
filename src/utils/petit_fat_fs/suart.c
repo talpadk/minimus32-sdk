@@ -1,1 +1,1 @@
-# Dummy file to satisfy buildpp
+// Dummy file to satisfy buildpp
