@@ -6,6 +6,7 @@
  * @file
  * @author Visti Andresen
  * @ingroup tests
+ * @ingroup tests_serial
  */
 
 #include <avr/interrupt.h>

@@ -6,6 +6,8 @@
  * @file
  * @author Visti Andresen
  * @ingroup tests
+ * @ingroup tests_display
+ * @ingroup tests_sensor
  */
 
 /** 

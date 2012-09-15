@@ -44,7 +44,19 @@
 /**
  * @defgroup tests_serial Serial port tests
  * @ingroup tests
- * Tests that uses the serial port.
+ * Tests that uses the serial port
  */
 
+
+/**
+ * @defgroup tests_display Display tests
+ * @ingroup tests
+ * Tests that uses a display
+ */
+
+/**
+ * @defgroup tests_sensor Sensor tests
+ * @ingroup tests
+ * Tests that uses a sensor
+ */
 
