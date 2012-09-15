@@ -33,8 +33,18 @@
  * @defgroup tests_motor Motor tests
  * @ingroup tests
  * Test programs that relate to controlling motors
- *  
- * 
+ */
+
+/**
+ * @defgroup tests_sd SD card tests
+ * @ingroup tests
+ * Test programs that relate to using SD/uSD/MMC cards
+ */
+
+/**
+ * @defgroup tests_serial Serial port tests
+ * @ingroup tests
+ * Tests that uses the serial port.
  */
 
 

@@ -6,6 +6,7 @@
  * @file
  * @author Visti Andresen
  * @ingroup tests
+ * @ingroup tests_sd
  * 
  * Red  blinking             = Start up delay<br>
  * Blue blinking, red  solid = Status OK <br>
