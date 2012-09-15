@@ -29,3 +29,12 @@
  * Location: src/tests
  */
 
+/**
+ * @defgroup tests_motor Motor tests
+ * @ingroup tests
+ * Test programs that relate to controlling motors
+ *  
+ * 
+ */
+
+
