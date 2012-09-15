@@ -1,3 +1,8 @@
+all:	bitfont_6x8.c vertical_byte_font_6x8.c
+	
+
+.PHONY: all
+
 bitfont_6x8.c:	bitfont.h 6x8.font 6x8.ppm
 		perl $(UTILS_PATH)/createFont.pl 6x8.font
 
