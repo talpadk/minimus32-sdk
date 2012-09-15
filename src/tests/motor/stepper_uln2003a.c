@@ -235,10 +235,6 @@ int main(void) {
 
   //Setup a blink pattern indicating a working MCU
   timer1_clock_init();
-  /*
-   * Note: the stepping speed could also be modified by reregistering the callback with a different period.
-   * It would be more efficient for the CPU, but de button read out delay 
-   */
   timer1_clock_register_callback(0, currentStepDelay_, 1, &performStep, 0, &stepCallBack_); 
   timer1_clock_register_callback(0, 100, 1, &buttonHandler, 0, &buttonCallBack); 
   
