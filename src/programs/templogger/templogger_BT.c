@@ -41,7 +41,7 @@
 #include "vertical_byte_font_6x8.h"
 #include "vertical_byte_font_12x16.h" // :=.  ;=-  <=[space]  ==[degrees celsius]   
 
-char loggerTemp[6] = "";
+char loggerTemp[7] = "";
 
 void pull_low (void) {
 	DDRC  |= 1<<7;
@@ -152,7 +152,8 @@ void printTemp(void *data){
 	   */
 	  temp=temp>>3; 
 	  
-	  char buffer[6];
+	  char buffer[7];
+	  buffer[6] = 0; //Null termination
 	  buffer[5] = '=';
 	  if (temp&1)
 	    buffer[4]='5';
