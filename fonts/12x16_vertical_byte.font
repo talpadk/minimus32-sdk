@@ -1,0 +1,9 @@
+#Defines a font containing a subset of 7bit ASCII
+#0123456789.- c
+#c = degrees celsius
+input=12x16.ppm
+output=vertical_byte_font_12x16
+width=12
+height=2
+start=48
+end=61
