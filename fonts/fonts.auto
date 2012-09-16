@@ -1,4 +1,4 @@
-all:	bitfont_6x8.c vertical_byte_font_6x8.c
+all:	bitfont_6x8.c vertical_byte_font_6x8.c vertical_byte_font_12x16.c
 	
 
 .PHONY: all
@@ -8,3 +8,6 @@ bitfont_6x8.c:	bitfont.h 6x8.font 6x8.ppm
 
 vertical_byte_font_6x8.c:	vertical_byte_font.h 6x8_vertical_byte.font 6x8.ppm
 		perl $(UTILS_PATH)/createVerticalByteFont.pl 6x8_vertical_byte.font
+
+vertical_byte_font_12x16.c:	vertical_byte_font.h 12x16_vertical_byte.font 12x16.ppm
+		perl $(UTILS_PATH)/createVerticalByteFont.pl 12x16_vertical_byte.font
