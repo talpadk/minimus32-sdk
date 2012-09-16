@@ -1,3 +1,4 @@
+
 //#exe
 
 ///Reads the temperatur using a DS18S20 and displays it on a Nokia 5110 display and logging over bluetooth
@@ -125,52 +126,62 @@ uint8_t calculateCRC(uint8_t *buffer, uint8_t length){
 	return crc;
 }
 
+
+uint8_t printState_=0;
 void printTemp(void *data){
-	int i;
-	ds18s20_blocking_start_conversion(&rom_code);
-	ds18s20_blocking_read_scratchpad(&rom_code, &scratchpad);
-	int16_t temp = (scratchpad.temperature_msb<<8)+scratchpad.temperature_lsb;
-
-	char sign = ' ';
-	if (temp < 0) {
-		sign = '-';
-		temp = (~temp)+1; // * -1
+        int i;
+	if (printState_==0){
+	  //Conversion
+	  printState_=1;
+	  ds18s20_blocking_start_conversion(&rom_code);
 	}
+	else {
+	  //Readout
+	  printState_=0;
+	  ds18s20_blocking_read_scratchpad(&rom_code, &scratchpad);
+	  int16_t temp = (scratchpad.temperature_msb<<8)+scratchpad.temperature_lsb;
 
-	char buffer[6];
-	buffer[5] = '=';
-	if (temp&1)
-		buffer[4]='5';
-	else
-		buffer[4]='0';
+	  char sign = ' ';
+	  if (temp < 0) {
+	    sign = '-';
+	    temp = (~temp)+1; // * -1
+	  }
+
+	  char buffer[6];
+	  buffer[5] = '=';
+	  if (temp&1)
+	    buffer[4]='5';
+	  else
+	    buffer[4]='0';
 	
-	buffer[3]=':'; // Actually a . due to the font-mapping
+	  buffer[3]=':'; // Actually a . due to the font-mapping
 	
-	temp = temp>>1;
-//TODO fix this... don't divide by 8.... find the issue
-temp=temp/8;
-	for (i=2; i>=0; i--){
-		buffer[i]=(temp%10)+'0';
-		temp /= 10;
-	}
+	  temp = temp>>1;
+	  //TODO fix this... don't divide by 8.... find the issue
+	  //temp=temp/8;
+	  for (i=2; i>=0; i--){
+	    buffer[i]=(temp%10)+'0';
+	    temp /= 10;
+	  }
 
-	// Remove leading 0's
-	for (i=0; i<=2; i++){
-		if (buffer[i] == '0') {
-			buffer[i] = '<'; // Actually space
-		} else {
-			break;
-		}
-	}
+	  // Remove leading 0's
+	  for (i=0; i<=2; i++){
+	    if (buffer[i] == '0') {
+	      buffer[i] = '<'; // Actually space
+	    } else {
+	      break;
+	    }
+	  }
 	
-	// Add - if negative	
-	if (sign == '-') {
-		buffer[0] = ';'; // Actually -
+	  // Add - if negative	
+	  if (sign == '-') {
+	    buffer[0] = ';'; // Actually -
+	  }
+	  
+	  strcpy(loggerTemp, buffer);
+
+	  pcd8544_print(8, 1, buffer, &vertical_byte_font_12x16);
 	}
-
-	strcpy(loggerTemp, buffer);
-
-	pcd8544_print(8, 1, buffer, &vertical_byte_font_12x16);
 }
 
 void printLogged(void *data) {
@@ -259,7 +270,7 @@ int main(){
 
 	timer1_clock_init();
 	timer1_callback dummyPrintCallback;
-	timer1_clock_register_callback(1, 0, 1, &printTemp, 0, &dummyPrintCallback);
+	timer1_clock_register_callback(0, 500, 1, &printTemp, 0, &dummyPrintCallback);
 
 	timer1_callback dummyLoggedCallback;
 	timer1_clock_register_callback(10, 0, 1, &printLogged, 0, &dummyLoggedCallback);
