@@ -144,9 +144,14 @@ void printTemp(void *data){
 	  char sign = ' ';
 	  if (temp < 0) {
 	    sign = '-';
-	    temp = (~temp)+1; // * -1
+	    temp = -temp;
 	  }
-
+	  /*
+	   * Correction for the difference from DS18S20 to DS18B20
+	   * Doesn't do propper rounding, it only rounds down
+	   */
+	  temp=temp>>3; 
+	  
 	  char buffer[6];
 	  buffer[5] = '=';
 	  if (temp&1)
@@ -157,8 +162,6 @@ void printTemp(void *data){
 	  buffer[3]=':'; // Actually a . due to the font-mapping
 	
 	  temp = temp>>1;
-	  //TODO fix this... don't divide by 8.... find the issue
-	  //temp=temp/8;
 	  for (i=2; i>=0; i--){
 	    buffer[i]=(temp%10)+'0';
 	    temp /= 10;
