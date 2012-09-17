@@ -253,7 +253,7 @@ int main(){
 	async_serial_write_string(VT100_CURSOR_OFF);
 	async_serial_write_string(VT100_CLEAR_SCREEN);
 	async_serial_write_string(VT100_CURSOR_HOME);
-	async_serial_write_string("#templogger-START\n\r");
+	async_serial_write_string("time;temp\n\r");
 
 	// Display
 	spi_config_io_for_master_mode();
