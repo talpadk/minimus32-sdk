@@ -61,6 +61,12 @@
 #include "vertical_byte_font_6x8.h"
 #include "vertical_byte_font_12x16.h" // :=.  ;=-  <=[space]  ==[degrees celsius]   
 
+// Mapping for font 12x16
+const char DOT = ':';
+const char MINUS = ';';
+const char SPACE = '<';
+const char CELCIUS = '=';
+
 char loggerTemp[7] = "";
 
 void pull_low (void) {
@@ -197,7 +203,7 @@ void printTemp(void *data){
 		// Remove leading 0's
 		for (i=0; i<=2; i++){
 			if (buffer[i] == '0') {
-				buffer[i] = '<'; // Actually a space
+				buffer[i] = SPACE;
 			} else {
 				break;
 			}
@@ -205,7 +211,12 @@ void printTemp(void *data){
 
 		// Add - if negative	
 		if (sign == '-') {
-			buffer[0] = ';'; // Actually a -
+			for (int i=1; i<7; i++) {
+				if (buffer[i] != SPACE) {
+					buffer[i-1] = MINUS;
+					break;
+				}
+			}
 		}
 
 		strcpy(loggerTemp, buffer);
@@ -220,13 +231,13 @@ void printLogged(void *data) {
 	}
 	// Fix font-mapping
 	for (uint8_t i=0; i<=5; i++) {
-		if (loggerTemp[i] == '<') {
+		if (loggerTemp[i] == SPACE) {
 			loggerTemp[i] = ' ';
-		} else if (loggerTemp[i] == ':') {
+		} else if (loggerTemp[i] == DOT) {
 			loggerTemp[i] = '.';
-		} else if (loggerTemp[i] == ';') {
+		} else if (loggerTemp[i] == MINUS) {
 			loggerTemp[i] = '-';
-		} else if (loggerTemp[i] == '=') {
+		} else if (loggerTemp[i] == CELCIUS) {
 			loggerTemp[i] = ' ';
 		}
 	}
