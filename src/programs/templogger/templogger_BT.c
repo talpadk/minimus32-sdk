@@ -1,7 +1,7 @@
-
 //#exe
 
-///Reads the temperatur using a DS18S20 and displays it on a Nokia 5110 display and logging over bluetooth
+/// Reads the temperature using a DS18B20 and displays it on a Nokia 5110 display and logging over bluetooth
+/// Logging datastructure: "time-elapsed;temp\n"
 
 /**
  * @file
@@ -111,26 +111,11 @@ void blinkLoggingLed() {
 }
 
 void async_serial_send_time() {
-	char * time_buffer = "Dxx hh:mm:ss.mmm";
 	timer1_wall_time time;
 	timer1_clock_get_time(&time);
 
-	time_buffer[1] = (time.day/10)%10+'0';
-	time_buffer[2] = (time.day%10)+'0';
-
-	time_buffer[4] = (time.hour/10)+'0';
-	time_buffer[5] = (time.hour%10)+'0';
-
-	time_buffer[7] = (time.min/10)+'0';
-	time_buffer[8] = (time.min%10)+'0';
-
-	time_buffer[10] = (time.sec/10)+'0';
-	time_buffer[11] = (time.sec%10)+'0';
-
-	time_buffer[13] = (time.msec/100)+'0';
-	time_buffer[14] = ((time.msec%100)/10)+'0';
-	time_buffer[15] = (time.msec%10)+'0';
-	
+	char time_buffer[10] = "";
+	sprintf(time_buffer, "%d", time.freerunning_sec);
 	async_serial_write_string(time_buffer);
 }
 
@@ -157,11 +142,23 @@ uint8_t calculateCRC(uint8_t *buffer, uint8_t length){
 	return crc;
 }
 
+char *lefttrim(char *str) {
+	int i=0;
+	while(strlen(str) > 0 && str[0] == ' ') {
+		for(i=1; i<strlen(str); i++) {
+			str[i-1] = str[i];
+			str[strlen(str)] = '\0';
+		}
+		return(str);
+	}
+	return "";
+}
+
 uint8_t printState_ = 0;
 uint8_t printStateInit_ = 0;
 void printTemp(void *data){
 	int i;
-	if (printState_ == 0){
+	if (printState_ == 0) {
 		//Conversion
 		printState_ = 1;
 		ds18s20_blocking_start_conversion(&rom_code);
@@ -169,8 +166,7 @@ void printTemp(void *data){
 			pcd8544_print(54, 5, "init", &vertical_byte_font_6x8);
 			printStateInit_ = 1;
 		}
-	}
-	else {
+	} else {
 		//Readout
 		printState_ = 0;
 		ds18s20_blocking_read_scratchpad(&rom_code, &scratchpad);
@@ -218,6 +214,10 @@ void printTemp(void *data){
 }
 
 void printLogged(void *data) {
+	// Don't log temp if not set...
+	if (!strlen(loggerTemp)) {
+		return;
+	}
 	// Fix font-mapping
 	for (uint8_t i=0; i<=5; i++) {
 		if (loggerTemp[i] == '<') {
@@ -233,9 +233,9 @@ void printLogged(void *data) {
 
 	async_serial_send_time();
 	async_serial_write_byte(';');
-	async_serial_write_string(loggerTemp);
+	async_serial_write_string(lefttrim(loggerTemp));
 	async_serial_write_string("\r\n");
-
+	
 	pcd8544_print(54, 5, loggerTemp, &vertical_byte_font_6x8);
 	blinkLoggingLed();
 }
