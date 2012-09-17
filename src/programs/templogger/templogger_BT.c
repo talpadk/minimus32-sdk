@@ -15,17 +15,37 @@
  *
  *
  * Hardware:<br>
- * 16x2 display wired according to LCD_HelloWorld.c<br>
- * PC7 must be wired to the DS18S20 data pin (DQ).<br>
+ * The minimus must operate at 3.3V (or level shifters must be used)<br>
+ *
+ * The N5110 must be supplied with 3.3V on N5110 (Vcc) with enough current<br>
+ * The N5110 must be connected to GND on N5100 (GND)<br>
+ *<br>
+ * PB1 (SCLK)  -> N5110.7 (SCLK)<br>
+ * PB2 (MOSI)  -> N5110.6 (DNK)<br>
+ * 
+ * PB4         -> N5110.3 (SCE)<br>
+ * PB5         -> N5110.4 (RST)<br>
+ * PB6         -> N5110.5 (D/C)<br>
+ *<br>
+ * Optional<br>
+ * PB -> 62 Ohm -> N5110.8 (LED) I haven't found any data on the LED,
+ * but a current limiting resistor of 62 Ohm seems safe (~7mA) at 3.3V<br>
+ *
+ * PC7 must be wired to the DS18B20 data pin (DQ).<br>
  * DQ must be pulled high (4.7k Ohm)
- * This example requires power to be supplied to the DS18S20, parasitic power is not supported (yet)
+ * This example requires power to be supplied to the DS18B20, parasitic power is not supported (yet)
+ * 
+ * BT module: 
+ * Vcc        -> pin 12 on BT
+ * GND        -> pin 13 on BT
+ * PD2 (RXD1) -> pin 1 on BT
+ * PD3 (TXD1) -> pin 2 on BT
  * 
  */
-#define F_CPU 16000000
-
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "minimus32.h"
 #include "watchdog.h"
@@ -79,6 +99,17 @@ pcd8544_io pcdIO = {
   desertCMD  
 };
 
+timer1_callback dummyLoggingLedCallback;
+void blinkLoggingLedOff() {
+	timer1_clock_unregister_callback(&dummyLoggingLedCallback);
+	PORTB |= 0b00000001; // turn off loggingLed
+}
+
+void blinkLoggingLed() {
+	timer1_clock_register_callback(0, 150, 1, &blinkLoggingLedOff, 0, &dummyLoggingLedCallback);
+	PORTB &= 0b11111110; // turn on loggingLed
+}
+
 void async_serial_send_time() {
 	char * time_buffer = "Dxx hh:mm:ss.mmm";
 	timer1_wall_time time;
@@ -126,65 +157,63 @@ uint8_t calculateCRC(uint8_t *buffer, uint8_t length){
 	return crc;
 }
 
-
-uint8_t printState_=0;
+uint8_t printState_ = 0;
+uint8_t printStateInit_ = 0;
 void printTemp(void *data){
-        int i;
-	if (printState_==0){
-	  //Conversion
-	  printState_=1;
-	  ds18s20_blocking_start_conversion(&rom_code);
+	int i;
+	if (printState_ == 0){
+		//Conversion
+		printState_ = 1;
+		ds18s20_blocking_start_conversion(&rom_code);
+		if (printStateInit_ == 0) {
+			pcd8544_print(54, 5, "init", &vertical_byte_font_6x8);
+			printStateInit_ = 1;
+		}
 	}
 	else {
-	  //Readout
-	  printState_=0;
-	  ds18s20_blocking_read_scratchpad(&rom_code, &scratchpad);
-	  int16_t temp = (scratchpad.temperature_msb<<8)+scratchpad.temperature_lsb;
+		//Readout
+		printState_ = 0;
+		ds18s20_blocking_read_scratchpad(&rom_code, &scratchpad);
+		int16_t temp = (scratchpad.temperature_msb<<8)+scratchpad.temperature_lsb;
 
-	  char sign = ' ';
-	  if (temp < 0) {
-	    sign = '-';
-	    temp = -temp;
-	  }
-	  /*
-	   * Correction for the difference from DS18S20 to DS18B20
-	   * Doesn't do propper rounding, it only rounds down
-	   */
-	  temp=temp>>3; 
-	  
-	  char buffer[7];
-	  buffer[6] = 0; //Null termination
-	  buffer[5] = '=';
-	  if (temp&1)
-	    buffer[4]='5';
-	  else
-	    buffer[4]='0';
-	
-	  buffer[3]=':'; // Actually a . due to the font-mapping
-	
-	  temp = temp>>1;
-	  for (i=2; i>=0; i--){
-	    buffer[i]=(temp%10)+'0';
-	    temp /= 10;
-	  }
+		char sign = ' ';
+		if (temp < 0) {
+			sign = '-';
+			temp = -temp;
+		}
+		
+		// Correction for the difference from DS18S20 to DS18B20
+		// Doesn't do propper rounding, it only rounds down... but so what?
+		temp=temp>>3; 
 
-	  // Remove leading 0's
-	  for (i=0; i<=2; i++){
-	    if (buffer[i] == '0') {
-	      buffer[i] = '<'; // Actually space
-	    } else {
-	      break;
-	    }
-	  }
-	
-	  // Add - if negative	
-	  if (sign == '-') {
-	    buffer[0] = ';'; // Actually -
-	  }
-	  
-	  strcpy(loggerTemp, buffer);
+		char buffer[7];
+		buffer[6] = 0; //Null termination
+		buffer[5] = '='; // Actually "degrees C" due to font-mapping
+		buffer[4] = (temp%10)+'0'; // the decimal
+		buffer[3]=':'; // Actually a . due to the font-mapping
 
-	  pcd8544_print(8, 1, buffer, &vertical_byte_font_12x16);
+		temp = temp>>1;
+		for (i=2; i>=0; i--){
+			buffer[i]=(temp%10)+'0';
+			temp /= 10;
+		}
+
+		// Remove leading 0's
+		for (i=0; i<=2; i++){
+			if (buffer[i] == '0') {
+				buffer[i] = '<'; // Actually a space
+			} else {
+				break;
+			}
+		}
+
+		// Add - if negative	
+		if (sign == '-') {
+			buffer[0] = ';'; // Actually a -
+		}
+
+		strcpy(loggerTemp, buffer);
+		pcd8544_print(8, 1, buffer, &vertical_byte_font_12x16);
 	}
 }
 
@@ -208,6 +237,7 @@ void printLogged(void *data) {
 	async_serial_write_string("\r\n");
 
 	pcd8544_print(54, 5, loggerTemp, &vertical_byte_font_6x8);
+	blinkLoggingLed();
 }
 
 int main(){
@@ -227,8 +257,11 @@ int main(){
 
 	// Display
 	spi_config_io_for_master_mode();
-	DDRB |= 0b11110000; //IO setup for the reset,cs, cmd and led pin
+	DDRB |= 0b11110001; //IO setup for the reset,cs, cmd, led and loggingLed pin
 	pcd8544_init(&pcdIO, 55);
+
+	// Logging LED
+	blinkLoggingLedOff();
 
 	pcd8544_fill_screen(0); // Clear screen
 
