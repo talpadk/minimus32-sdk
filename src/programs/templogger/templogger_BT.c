@@ -164,19 +164,15 @@ char *lefttrim(char *str) {
 	return "";
 }
 
-uint8_t runningDot = 0;
+char runningDot[2] = " \0";
 void runningDotForMCU(void *data) {
-	char d[2];
-	d[1] = 0;
-	if (runningDot) {
-		d[0] = ' ';
-		runningDot = 0;
+	if (runningDot[0] == '.') {
+		runningDot[0] = ' ';
 	} else {
-		d[0] = '.';
-		runningDot = 1;
+		runningDot[0] = '.';
 	}
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
-		pcd8544_print(0, 0, d, &vertical_byte_font_6x8);
+		pcd8544_print(0, 0, runningDot, &vertical_byte_font_6x8);
 	}
 }
 
