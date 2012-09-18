@@ -1,7 +1,8 @@
 //#exe
 
 /// Reads the temperature using a DS18B20 and displays it on a Nokia 5110 display and logging over bluetooth
-/// Logging datastructure: "time-elapsed;temp\n"
+/// Logging datastructure: "time-elapsed;temp\n". First line a header "time;temp\n"
+/// It also blinks an external LED og logging, and a DOT in the uppper left corner, to indicate a working MCU
 
 /**
  * @file
@@ -44,6 +45,7 @@
  */
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <util/atomic.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -121,7 +123,9 @@ void async_serial_send_time() {
 	timer1_clock_get_time(&time);
 
 	char time_buffer[10] = "";
-	sprintf(time_buffer, "%d", time.freerunning_sec);
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {
+		sprintf(time_buffer, "%d", time.freerunning_sec);
+	}
 	async_serial_write_string(time_buffer);
 }
 
@@ -160,18 +164,29 @@ char *lefttrim(char *str) {
 	return "";
 }
 
+uint8_t runningDot = 0;
+void runningDotForMCU(void *data) {
+	char d[2];
+	d[1] = 0;
+	if (runningDot) {
+		d[0] = ' ';
+		runningDot = 0;
+	} else {
+		d[0] = '.';
+		runningDot = 1;
+	}
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {
+		pcd8544_print(0, 0, d, &vertical_byte_font_6x8);
+	}
+}
+
 uint8_t printState_ = 0;
-uint8_t printStateInit_ = 0;
-void printTemp(void *data){
+void printTemp(void *data) {
 	int i;
 	if (printState_ == 0) {
 		//Conversion
 		printState_ = 1;
 		ds18s20_blocking_start_conversion(&rom_code);
-		if (printStateInit_ == 0) {
-			pcd8544_print(54, 5, "init", &vertical_byte_font_6x8);
-			printStateInit_ = 1;
-		}
 	} else {
 		//Readout
 		printState_ = 0;
@@ -219,8 +234,10 @@ void printTemp(void *data){
 			}
 		}
 
-		strcpy(loggerTemp, buffer);
-		pcd8544_print(8, 1, buffer, &vertical_byte_font_12x16);
+		ATOMIC_BLOCK(ATOMIC_FORCEON) {
+			strcpy(loggerTemp, buffer);
+			pcd8544_print(8, 1, buffer, &vertical_byte_font_12x16);
+		}
 	}
 }
 
@@ -247,7 +264,9 @@ void printLogged(void *data) {
 	async_serial_write_string(lefttrim(loggerTemp));
 	async_serial_write_string("\r\n");
 	
-	pcd8544_print(54, 5, loggerTemp, &vertical_byte_font_6x8);
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {
+		pcd8544_print(54, 5, loggerTemp, &vertical_byte_font_6x8);
+	}
 	blinkLoggingLed();
 }
 
@@ -317,13 +336,20 @@ int main(){
 	rom_crc = calculateCRC(rom_code.rom_code, 7);
 
 	timer1_clock_init();
+/*
+	timer1_callback dummyRunningDotCallback; // Blinking dot, to indicate a working MCU 
+	timer1_clock_register_callback(1, 0, 1, &runningDotForMCU, 0, &dummyRunningDotCallback);
+*/
+
 	timer1_callback dummyPrintCallback;
 	timer1_clock_register_callback(0, 500, 1, &printTemp, 0, &dummyPrintCallback);
 
 	timer1_callback dummyLoggedCallback;
 	timer1_clock_register_callback(10, 0, 1, &printLogged, 0, &dummyLoggedCallback);
 
-	pcd8544_print(4, 5, "Logged:", &vertical_byte_font_6x8);
+	ATOMIC_BLOCK(ATOMIC_FORCEON) {
+		pcd8544_print(4, 5, "Logged:  init", &vertical_byte_font_6x8);
+	}
 	printTemp(0);
 	printLogged(0);
 
