@@ -164,7 +164,7 @@ char *lefttrim(char *str) {
 	return "";
 }
 
-char runningDot[2] = " \0";
+char runningDot[2] = " ";
 void runningDotForMCU(void *data) {
 	if (runningDot[0] == '.') {
 		runningDot[0] = ' ';
@@ -182,11 +182,15 @@ void printTemp(void *data) {
 	if (printState_ == 0) {
 		//Conversion
 		printState_ = 1;
-		ds18s20_blocking_start_conversion(&rom_code);
+		ATOMIC_BLOCK(ATOMIC_FORCEON) {
+			ds18s20_blocking_start_conversion(&rom_code);
+		}
 	} else {
 		//Readout
 		printState_ = 0;
-		ds18s20_blocking_read_scratchpad(&rom_code, &scratchpad);
+		ATOMIC_BLOCK(ATOMIC_FORCEON) {
+			ds18s20_blocking_read_scratchpad(&rom_code, &scratchpad);
+		}
 		int16_t temp = (scratchpad.temperature_msb<<8)+scratchpad.temperature_lsb;
 
 		char sign = ' ';
@@ -201,9 +205,9 @@ void printTemp(void *data) {
 
 		char buffer[7];
 		buffer[6] = 0; //Null termination
-		buffer[5] = '='; // Actually "degrees C" due to font-mapping
+		buffer[5] = CELCIUS;
 		buffer[4] = (temp%10)+'0'; // the decimal
-		buffer[3]=':'; // Actually a . due to the font-mapping
+		buffer[3] = DOT;
 
 		temp = temp>>1;
 		for (i=2; i>=0; i--){
@@ -332,10 +336,8 @@ int main(){
 	rom_crc = calculateCRC(rom_code.rom_code, 7);
 
 	timer1_clock_init();
-/*
 	timer1_callback dummyRunningDotCallback; // Blinking dot, to indicate a working MCU 
 	timer1_clock_register_callback(1, 0, 1, &runningDotForMCU, 0, &dummyRunningDotCallback);
-*/
 
 	timer1_callback dummyPrintCallback;
 	timer1_clock_register_callback(0, 500, 1, &printTemp, 0, &dummyPrintCallback);
