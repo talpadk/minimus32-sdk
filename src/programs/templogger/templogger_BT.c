@@ -206,7 +206,7 @@ void printTemp(void *data) {
 		decimal /= 10;                  //rounding down
 		
 		temp=temp>>4;                   //remove decimal part
-		if (decimal>10) {               //rounding up
+		if (decimal==10) {               //rounding up
 		  temp++;
 		  decimal=0;
 		}
