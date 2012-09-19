@@ -200,13 +200,13 @@ void printTemp(void *data) {
 			temp = -temp;
 		}
 		
-		decimal = temp & 0b1111;        //masking
-		decimal = (decimal * 100) / 16; //conversion of desiumal part to int value range 99-0 (not all values used)
-		if (decimal>=50) decimal+=10;   //rounding up
-		decimal /= 10;                  //rounding down
+		decimal = temp & 0b1111;          //masking
+		decimal = (decimal * 100) / 16;   //conversion of decimal part to int value range 99-0 (not all values used)
+		if ((decimal%10)>=5) decimal+=10; //rounding up
+		decimal /= 10;                    //rounding down
 		
-		temp=temp>>4;                   //remove decimal part
-		if (decimal==10) {               //rounding up
+		temp=temp>>4;                     //remove decimal part
+		if (decimal==10) {                //rounding up
 		  temp++;
 		  decimal=0;
 		}
