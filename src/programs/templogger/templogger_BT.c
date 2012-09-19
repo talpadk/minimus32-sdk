@@ -17,30 +17,30 @@
  *
  * Hardware:<br>
  * The minimus must operate at 3.3V (or level shifters must be used)<br>
- *
+ * <br>
  * The N5110 must be supplied with 3.3V on N5110 (Vcc) with enough current<br>
  * The N5110 must be connected to GND on N5100 (GND)<br>
- *<br>
+ * <br>
  * PB1 (SCLK)  -> N5110.7 (SCLK)<br>
  * PB2 (MOSI)  -> N5110.6 (DNK)<br>
- * 
+ * <br>
  * PB4         -> N5110.3 (SCE)<br>
  * PB5         -> N5110.4 (RST)<br>
  * PB6         -> N5110.5 (D/C)<br>
- *<br>
+ * <br>
  * Optional<br>
- * PB -> 62 Ohm -> N5110.8 (LED) I haven't found any data on the LED,
+ * PB -> 62 Ohm -> N5110.8 (LED) I haven't found any data on the LED,<br>
  * but a current limiting resistor of 62 Ohm seems safe (~7mA) at 3.3V<br>
- *
+ * <br>
  * PC7 must be wired to the DS18B20 data pin (DQ).<br>
- * DQ must be pulled high (4.7k Ohm)
- * This example requires power to be supplied to the DS18B20, parasitic power is not supported (yet)
- * 
- * BT module: 
- * Vcc        -> pin 12 on BT
- * GND        -> pin 13 on BT
- * PD2 (RXD1) -> pin 1 on BT
- * PD3 (TXD1) -> pin 2 on BT
+ * DQ must be pulled high (4.7k Ohm)<br>
+ * This example requires power to be supplied to the DS18B20, parasitic power is not supported (yet)<br>
+ * <br>
+ * BT module: <br>
+ * Vcc        -> pin 12 on BT<br>
+ * GND        -> pin 13 on BT<br>
+ * PD2 (RXD1) -> pin 1 on BT<br>
+ * PD3 (TXD1) -> pin 2 on BT<br>
  * 
  */
 #include <avr/io.h>
