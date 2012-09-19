@@ -178,7 +178,8 @@ void runningDotForMCU(void *data) {
 
 uint8_t printState_ = 0;
 void printTemp(void *data) {
-	int i;
+  	int i;
+	int decimal;
 	if (printState_ == 0) {
 		//Conversion
 		printState_ = 1;
@@ -199,17 +200,23 @@ void printTemp(void *data) {
 			temp = -temp;
 		}
 		
-		// Correction for the difference from DS18S20 to DS18B20
-		// Doesn't do propper rounding, it only rounds down... but so what?
-		temp=temp>>3; 
+		decimal = temp & 0b1111;        //masking
+		decimal = (decimal * 100) / 16; //conversion of desiumal part to int value range 99-0 (not all values used)
+		if (decimal>=50) decimal+=10;   //rounding up
+		decimal /= 10;                  //rounding down
+		
+		temp=temp>>4;                   //remove decimal part
+		if (decimal>10) {               //rounding up
+		  temp++;
+		  decimal=0;
+		}
 
 		char buffer[7];
 		buffer[6] = 0; //Null termination
 		buffer[5] = CELCIUS;
-		buffer[4] = (temp%10)+'0'; // the decimal
+		buffer[4] = decimal+'0'; // the decimal
 		buffer[3] = DOT;
 
-		temp = temp>>1;
 		for (i=2; i>=0; i--){
 			buffer[i]=(temp%10)+'0';
 			temp /= 10;
