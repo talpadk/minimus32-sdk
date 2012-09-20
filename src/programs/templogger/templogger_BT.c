@@ -1,7 +1,7 @@
 //#exe
 
 /// Reads the temperature using a DS18B20 and displays it on a Nokia 5110 display and logging over bluetooth
-/// Logging datastructure: "time-elapsed;temp\n". First line a header "time;temp\n"
+/// Logging datastructure: "seconds-elapsed;temperature\n". First line a header "time;temp\n"
 /// It also blinks an external LED og logging, and a DOT in the uppper left corner, to indicate a working MCU
 
 /**
@@ -41,7 +41,10 @@
  * GND        -> pin 13 on BT<br>
  * PD2 (RXD1) -> pin 1 on BT<br>
  * PD3 (TXD1) -> pin 2 on BT<br>
- * 
+ * <br>
+ * LED:<br>
+ * 1K resistor - between GND and PD0<br>
+ *
  */
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -61,7 +64,9 @@
 #include "spi.h"
 #include "pcd8544.h"
 #include "vertical_byte_font_6x8.h"
-#include "vertical_byte_font_12x16.h" // :=.  ;=-  <=[space]  ==[degrees celsius]   
+#include "vertical_byte_font_12x16.h" // Fonts are 0-9 and other mappings are :=.  ;=-  <=[space]  ==[degrees celsius]   
+
+const uint8_t LOGINTERVAL = 10;
 
 // Mapping for font 12x16
 const char DOT = ':';
@@ -124,55 +129,42 @@ void async_serial_send_time() {
 
 	char time_buffer[10] = "";
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
-		sprintf(time_buffer, "%d", time.freerunning_sec);
+		sprintf(time_buffer, "%d", (time.freerunning_sec-LOGINTERVAL));
 	}
 	async_serial_write_string(time_buffer);
 }
 
 onewire_rom_code rom_code;
-uint8_t rom_crc;
 ds18s20_scratchpad scratchpad;
-
 uint8_t calculateCRC(uint8_t *buffer, uint8_t length){
-	uint8_t crc=0;
+	uint8_t crc = 0;
 	uint8_t tmp;
-	uint8_t i,j,input_bit;
+	uint8_t i, j, input_bit;
 	for (i=0; i<length; i++) {
 		tmp = buffer[i];
 		for (j=0; j<8; j++){
-			input_bit = (crc ^ tmp) & 1;//first xor
+			input_bit = (crc ^ tmp) & 1; // first xor
 
-			if (input_bit) crc = crc ^ 0x18; //xor the top line in the crc (minus the last part)
+			if (input_bit) crc = crc ^ 0x18; // xor the top line in the crc (minus the last part)
 
-			crc = crc >> 1; //the cyclic part
+			crc = crc >> 1; // the cyclic part
 			tmp = tmp >> 1;
-			crc = crc | (input_bit<<7); //add the missing part
+			crc = crc | (input_bit<<7); // add the missing part
 		}
 	}
 	return crc;
 }
 
 char *lefttrim(char *str) {
-	int i=0;
-	while(strlen(str) > 0 && str[0] == ' ') {
-		for(i=1; i<strlen(str); i++) {
-			str[i-1] = str[i];
-			str[strlen(str)] = '\0';
-		}
-		return(str);
-	}
-	return "";
+	while (*str == ' ') str++;
+	return str;
 }
 
-char runningDot[2] = " ";
+char runningDot_[2] = " ";
 void runningDotForMCU(void *data) {
-	if (runningDot[0] == '.') {
-		runningDot[0] = ' ';
-	} else {
-		runningDot[0] = '.';
-	}
+	runningDot_[0] = runningDot_[0] == '.' ? ' ' : '.';
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
-		pcd8544_print(0, 0, runningDot, &vertical_byte_font_6x8);
+		pcd8544_print(0, 0, runningDot_, &vertical_byte_font_6x8);
 	}
 }
 
@@ -181,17 +173,30 @@ void printTemp(void *data) {
   	int i;
 	int decimal;
 	if (printState_ == 0) {
-		//Conversion
+		// Conversion
 		printState_ = 1;
 		ATOMIC_BLOCK(ATOMIC_FORCEON) {
 			ds18s20_blocking_start_conversion(&rom_code);
 		}
 	} else {
-		//Readout
+		// Readout
 		printState_ = 0;
 		ATOMIC_BLOCK(ATOMIC_FORCEON) {
 			ds18s20_blocking_read_scratchpad(&rom_code, &scratchpad);
 		}
+		uint8_t calculatedCRC = calculateCRC((uint8_t*)&scratchpad, 7);
+char b1[4];
+sprintf(b1, "%d", calculatedCRC);
+char b2[4];
+sprintf(b2, "%d", scratchpad.crc);
+ATOMIC_BLOCK(ATOMIC_FORCEON) {
+	pcd8544_print(15, 0, b1, &vertical_byte_font_6x8);
+	pcd8544_print(40, 0, b2, &vertical_byte_font_6x8);
+}
+//		if (calculatedCRC != scratchpad.crc) { // Test whether the reading is ok
+//			return;
+//		}
+		
 		int16_t temp = (scratchpad.temperature_msb<<8)+scratchpad.temperature_lsb;
 
 		char sign = ' ';
@@ -200,30 +205,33 @@ void printTemp(void *data) {
 			temp = -temp;
 		}
 		
-		decimal = temp & 0b1111;          //masking
-		decimal = (decimal * 100) / 16;   //conversion of decimal part to int value range 99-0 (not all values used)
-		if ((decimal%10)>=5) decimal+=10; //rounding up
-		decimal /= 10;                    //rounding down
+		decimal = temp & 0b1111;              // masking
+		decimal = (decimal * 100) / 16;       // conversion of decimal part to int value range 99-0 (not all values used)
+		if ((decimal%10) >= 5) decimal += 10; // rounding up
+		decimal /= 10;                        // rounding down
 		
-		temp=temp>>4;                     //remove decimal part
-		if (decimal==10) {                //rounding up
+		temp = temp>>4;                       // remove decimal part
+		if (decimal == 10) {                  // rounding up
 		  temp++;
-		  decimal=0;
+		  decimal = 0;
 		}
 
 		char buffer[7];
-		buffer[6] = 0; //Null termination
+		buffer[6] = 0; // Null termination
 		buffer[5] = CELCIUS;
 		buffer[4] = decimal+'0'; // the decimal
 		buffer[3] = DOT;
 
 		for (i=2; i>=0; i--){
-			buffer[i]=(temp%10)+'0';
+			buffer[i] = (temp%10)+'0';
 			temp /= 10;
 		}
 
-		// Remove leading 0's
+		// Remove leading 0's unless 0.x
 		for (i=0; i<=2; i++){
+			if (buffer[i+1] == DOT) {
+				break;
+			}
 			if (buffer[i] == '0') {
 				buffer[i] = SPACE;
 			} else {
@@ -277,12 +285,29 @@ void printLogged(void *data) {
 	blinkLoggingLed();
 }
 
+void ds18b20_init(void) {
+	onewire_init(4, &pull_low, &release, &get_bit);
+	onewire_wait_idle();
+	onewire_send_byte(0x33);
+	onewire_wait_idle();
+
+	for (uint8_t b=0; b<7; b++) {
+		onewire_start_read_byte();
+		onewire_wait_idle();
+		rom_code.rom_code[b] = onewire_get_buffer();
+	}
+
+	onewire_start_read_byte();
+	onewire_wait_idle();
+	rom_code.crc = onewire_get_buffer();
+}
+
 int main(){
 	watchdog_disable();
 	minimus32_init();
 	clock_prescale_none();
 
-	sei(); //interupts on
+	sei(); // interupts on
 	timer1_clock_init();
 
 	// BT-card
@@ -294,7 +319,7 @@ int main(){
 
 	// Display
 	spi_config_io_for_master_mode();
-	DDRB |= 0b11110001; //IO setup for the reset,cs, cmd, led and loggingLed pin
+	DDRB |= 0b11110001; // IO setup for the reset,cs, cmd, led and loggingLed pin
 	pcd8544_init(&pcdIO, 55);
 
 	// Logging LED
@@ -303,54 +328,17 @@ int main(){
 	pcd8544_fill_screen(0); // Clear screen
 
 	// DS18B20
-	onewire_init(4, &pull_low, &release, &get_bit);
-	onewire_wait_idle();
-	onewire_send_byte(0x33);
-	onewire_wait_idle();
-
-	onewire_start_read_byte();
-	onewire_wait_idle();
-	rom_code.rom_code[0]=onewire_get_buffer();
-
-	onewire_start_read_byte();
-	onewire_wait_idle();
-	rom_code.rom_code[1]=onewire_get_buffer();
-
-	onewire_start_read_byte();
-	onewire_wait_idle();
-	rom_code.rom_code[2]=onewire_get_buffer();
-
-	onewire_start_read_byte();
-	onewire_wait_idle();
-	rom_code.rom_code[3]=onewire_get_buffer();
-
-	onewire_start_read_byte();
-	onewire_wait_idle();
-	rom_code.rom_code[4]=onewire_get_buffer();
-
-	onewire_start_read_byte();
-	onewire_wait_idle();
-	rom_code.rom_code[5]=onewire_get_buffer();
-
-	onewire_start_read_byte();
-	onewire_wait_idle();
-	rom_code.rom_code[6]=onewire_get_buffer();
-
-	onewire_start_read_byte();
-	onewire_wait_idle();
-	rom_code.crc=onewire_get_buffer();
-
-	rom_crc = calculateCRC(rom_code.rom_code, 7);
+	ds18b20_init();
 
 	timer1_clock_init();
 	timer1_callback dummyRunningDotCallback; // Blinking dot, to indicate a working MCU 
 	timer1_clock_register_callback(1, 0, 1, &runningDotForMCU, 0, &dummyRunningDotCallback);
 
-	timer1_callback dummyPrintCallback;
+	timer1_callback dummyPrintCallback; // Printing the temperature
 	timer1_clock_register_callback(0, 500, 1, &printTemp, 0, &dummyPrintCallback);
 
-	timer1_callback dummyLoggedCallback;
-	timer1_clock_register_callback(10, 0, 1, &printLogged, 0, &dummyLoggedCallback);
+	timer1_callback dummyLoggedCallback; // Logging through BT
+	timer1_clock_register_callback(LOGINTERVAL, 0, 1, &printLogged, 0, &dummyLoggedCallback);
 
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 		pcd8544_print(4, 5, "Logged:  init", &vertical_byte_font_6x8);
