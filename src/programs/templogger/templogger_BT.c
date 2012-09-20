@@ -64,7 +64,7 @@
 #include "spi.h"
 #include "pcd8544.h"
 #include "vertical_byte_font_6x8.h"
-#include "vertical_byte_font_12x16.h" // Fonts are 0-9 and other mappings are :=.  ;=-  <=[space]  ==[degrees celsius]   
+#include "vertical_byte_font_12x16.h" // Font is 0-9 and other mappings are :=.  ;=-  <=[space]  ==[degrees celsius]   
 
 const uint8_t LOGINTERVAL = 10;
 
@@ -170,6 +170,8 @@ void runningDotForMCU(void *data) {
 
 uint8_t printState_ = 0;
 void printTemp(void *data) {
+	// Run every 500ms, making it update every second
+	// Wait a minute! Up to 750ms to convert? Does this end up right then?
   	int i;
 	int decimal;
 	if (printState_ == 0) {
@@ -184,7 +186,9 @@ void printTemp(void *data) {
 		ATOMIC_BLOCK(ATOMIC_FORCEON) {
 			ds18s20_blocking_read_scratchpad(&rom_code, &scratchpad);
 		}
-		uint8_t calculatedCRC = calculateCRC((uint8_t*)&scratchpad, 7);
+		uint8_t calculatedCRC = calculateCRC((uint8_t*)&scratchpad, 8);
+
+// Debugging for CRC start
 char b1[4];
 sprintf(b1, "%d", calculatedCRC);
 char b2[4];
@@ -193,6 +197,8 @@ ATOMIC_BLOCK(ATOMIC_FORCEON) {
 	pcd8544_print(15, 0, b1, &vertical_byte_font_6x8);
 	pcd8544_print(40, 0, b2, &vertical_byte_font_6x8);
 }
+// Debugging for CRC end
+
 //		if (calculatedCRC != scratchpad.crc) { // Test whether the reading is ok
 //			return;
 //		}
