@@ -43,7 +43,7 @@
  * PD3 (TXD1) -> pin 2 on BT<br>
  * <br>
  * LED:<br>
- * 1K resistor - between GND and PD0<br>
+ * GND -> LED -> 1K resistor -> PD0<br>
  *
  */
 #include <avr/io.h>
@@ -115,12 +115,12 @@ pcd8544_io pcdIO = {
 timer1_callback dummyLoggingLedCallback;
 void blinkLoggingLedOff() {
 	timer1_clock_unregister_callback(&dummyLoggingLedCallback);
-	PORTB |= 0b00000001; // turn off loggingLed
+	PORTD &= 0b11111110; // turn off loggingLed
 }
 
 void blinkLoggingLed() {
 	timer1_clock_register_callback(0, 150, 1, &blinkLoggingLedOff, 0, &dummyLoggingLedCallback);
-	PORTB &= 0b11111110; // turn on loggingLed
+	PORTD |= 0b00000001; // turn on loggingLed
 }
 
 void async_serial_send_time() {
@@ -162,7 +162,7 @@ char *lefttrim(char *str) {
 
 char runningDot_[2] = " ";
 void runningDotForMCU(void *data) {
-	runningDot_[0] = runningDot_[0] == '.' ? ' ' : '.';
+	runningDot_[0] = runningDot_[0] == ' ' ? '*' : ' ';
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 		pcd8544_print(0, 0, runningDot_, &vertical_byte_font_6x8);
 	}
@@ -186,22 +186,6 @@ void printTemp(void *data) {
 		ATOMIC_BLOCK(ATOMIC_FORCEON) {
 			ds18s20_blocking_read_scratchpad(&rom_code, &scratchpad);
 		}
-		uint8_t calculatedCRC = calculateCRC((uint8_t*)&scratchpad, 8);
-
-// Debugging for CRC start
-char b1[4];
-sprintf(b1, "%d", calculatedCRC);
-char b2[4];
-sprintf(b2, "%d", scratchpad.crc);
-ATOMIC_BLOCK(ATOMIC_FORCEON) {
-	pcd8544_print(15, 0, b1, &vertical_byte_font_6x8);
-	pcd8544_print(40, 0, b2, &vertical_byte_font_6x8);
-}
-// Debugging for CRC end
-
-//		if (calculatedCRC != scratchpad.crc) { // Test whether the reading is ok
-//			return;
-//		}
 		
 		int16_t temp = (scratchpad.temperature_msb<<8)+scratchpad.temperature_lsb;
 
@@ -316,6 +300,10 @@ int main(){
 	sei(); // interupts on
 	timer1_clock_init();
 
+	// Input/output
+	DDRB |= 0b11110000; // IO setup for the reset, cs, cmd, led
+	DDRD |= (1<<DDD0); // PD0 loggingLed as output
+
 	// BT-card
 	async_serial_init(SERIAL_SPEED_9600);
 	async_serial_write_string(VT100_CURSOR_OFF);
@@ -325,7 +313,6 @@ int main(){
 
 	// Display
 	spi_config_io_for_master_mode();
-	DDRB |= 0b11110001; // IO setup for the reset,cs, cmd, led and loggingLed pin
 	pcd8544_init(&pcdIO, 55);
 
 	// Logging LED
