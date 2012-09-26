@@ -170,8 +170,6 @@ void runningDotForMCU(void *data) {
 
 uint8_t printState_ = 0;
 void printTemp(void *data) {
-	// Run every 500ms, making it update every second
-	// Wait a minute! Up to 750ms to convert? Does this end up right then?
   	int i;
 	int decimal;
 	if (printState_ == 0) {
@@ -267,7 +265,7 @@ void printLogged(void *data) {
 	async_serial_send_time();
 	async_serial_write_byte(';');
 	async_serial_write_string(lefttrim(loggerTemp));
-	async_serial_write_string("\r\n");
+	async_serial_write_string("\n");
 	
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 		pcd8544_print(54, 5, loggerTemp, &vertical_byte_font_6x8);
@@ -324,14 +322,14 @@ int main(){
 	ds18b20_init();
 
 	timer1_clock_init();
-	timer1_callback dummyRunningDotCallback; // Blinking dot, to indicate a working MCU 
-	timer1_clock_register_callback(1, 0, 1, &runningDotForMCU, 0, &dummyRunningDotCallback);
-
 	timer1_callback dummyPrintCallback; // Printing the temperature
-	timer1_clock_register_callback(0, 500, 1, &printTemp, 0, &dummyPrintCallback);
+	timer1_clock_register_callback(1, 0, 1, &printTemp, 0, &dummyPrintCallback);
 
 	timer1_callback dummyLoggedCallback; // Logging through BT
 	timer1_clock_register_callback(LOGINTERVAL, 0, 1, &printLogged, 0, &dummyLoggedCallback);
+
+	timer1_callback dummyRunningDotCallback; // Blinking dot, to indicate a working MCU 
+	timer1_clock_register_callback(1, 0, 1, &runningDotForMCU, 0, &dummyRunningDotCallback);
 
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
 		pcd8544_print(4, 5, "Logged:  init", &vertical_byte_font_6x8);
