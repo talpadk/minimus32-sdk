@@ -267,6 +267,18 @@ void timer1_clock_get_time(timer1_wall_time *time)
   }
 }
 
+void timer1_clock_get_micro_time(uint16_t *msecs, uint16_t *ticks) {
+  ATOMIC_BLOCK(ATOMIC_FORCEON)
+  {
+    *msecs = timer1_clock_walltimer.msec;
+    *ticks = TCNT1;
+ }
+  if (*msecs!=timer1_clock_walltimer.msec){
+    //msec has looped, we could refetch the vaĺues however just setting the ticks to there max should be more accurate
+    *ticks = TIMER1_TICKS_PER_US*1000-1;
+  }
+}
+
 void timer1_clock_reset()
 { 
   ATOMIC_BLOCK(ATOMIC_FORCEON)

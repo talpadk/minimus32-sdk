@@ -71,9 +71,19 @@ void timer1_clock_init(void);
 
 
 /** 
- * Sets the tick for the next interrupts as an offset from the current tick
+ * This function uses the Output compare B of Timer1 to generate a interrupt.
+ * It sets the tick for the next interrupt as an offset from the current tick.
+ *
+ * Using this function has a lot less overhead than using registered callbacks,
+ * and a lot less flexibility.
  * 
- * @param delay_ticks the number of ticks for the next interrupt, don't attemp to create a delay longer tha the 1ms loop period (16000 ticks) also tiny delay will fail due to code execution time.
+ * When using this function you MUST implement a ISR(TIMER1_COMPB_vect) interrupt vector.
+ * In this IRQ function you must either call this function or timer1_sub_timer_b_unset,
+ * failure to do so will result in the IRQ handler to be called again in 1ms
+ *
+ * WARNING: Calling this function enables global interrupts!
+ * 
+ * @param delay_ticks the number of ticks for the next interrupt, don't attemp to create a delay longer tha the 1ms loop period (16000 ticks) also a tiny delay will fail due to code execution time.
  */
 void timer1_sub_timer_b_delay(uint16_t delay_ticks); 
 
@@ -89,9 +99,9 @@ void timer1_sub_timer_b_unset();
  * 
  * @param sec number of seconds that should pass before calling the callback.
  * @param msec aditional numer of mili seconds, range 0-999 is valid
- * @param recurring if true callback will be registered when called, otherwise it will be removed
+ * @param recurring if true callback will be re-registered when called, otherwise it will be removed
  * @param callback a pointer to the funtion that will be called
- * @param user_data a pointer to user data that will be passed to the function
+ * @param user_data a pointer to user data that will be passed to the function, may be null.
  * @param callback_struct a pointer to the struct that will be initialized and linked into the clock
  */
 void timer1_clock_register_callback(uint16_t sec, uint16_t msec, uint8_t recurring, void (*callback)(void *), void *user_data, timer1_callback *callback_struct);
@@ -109,6 +119,15 @@ void timer1_clock_unregister_callback(timer1_callback *callback_struct);
  * @param time a pointer to the time struct used to hold the result
  */
 void timer1_clock_get_time(timer1_wall_time *time);
+
+/** 
+ * Obtains a high resolution "timestamp", usefull for measuring the passage of a small time incremment.
+ * The returned time is compensated for inconsistency at the cost of increesed jitter.
+ * 
+ * @param msecs the current mili second, loops ever 1 second
+ * @param ticks the current tick (depends on the clock speed, 16 ticks per us @ 16MHz)
+ */
+void timer1_clock_get_micro_time(uint16_t *msecs, uint16_t *ticks);
 
 /** 
  * Resets the current "uptime"
