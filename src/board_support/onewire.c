@@ -7,7 +7,7 @@
 
 
 uint8_t interrupt_id_;
-onewire_state state_;
+volatile onewire_state state_;
 onewire_substate substate_;
 
 onewire_action pull_low_;
