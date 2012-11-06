@@ -162,7 +162,7 @@ my $cleanConfirm:shared = 1;
 
 #Colour definitions for different types of output
 my $colourVerbose:shared = "\033[33m";
-my $colourNormal:shared = "\033[37;40m";
+my $colourNormal:shared = "\e[0m";
 my $colourError:shared = "\033[33;41m";
 my $colourAction:shared = "\033[32m";
 my $colourExternal:shared = "\033[36m";
