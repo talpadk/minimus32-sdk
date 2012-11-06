@@ -26,4 +26,6 @@ void onewire_init(onewire_action pull_low, onewire_action release, onewire_get_b
 void onewire_reset(void);
 void onewire_send_byte(uint8_t byte);
 uint8_t onewire_read_byte(void);
+
+uint8_t onewire_calculate_crc(uint8_t *buffer, uint8_t length);
 #endif //MOD_1WIRE_H

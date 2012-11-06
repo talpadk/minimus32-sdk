@@ -133,24 +133,6 @@ void async_serial_send_time() {
 
 onewire_rom_code rom_code;
 ds18s20_scratchpad scratchpad;
-uint8_t calculateCRC(uint8_t *buffer, uint8_t length){
-	uint8_t crc = 0;
-	uint8_t tmp;
-	uint8_t i, j, input_bit;
-	for (i=0; i<length; i++) {
-		tmp = buffer[i];
-		for (j=0; j<8; j++){
-			input_bit = (crc ^ tmp) & 1; // first xor
-
-			if (input_bit) crc = crc ^ 0x18; // xor the top line in the crc (minus the last part)
-
-			crc = crc >> 1; // the cyclic part
-			tmp = tmp >> 1;
-			crc = crc | (input_bit<<7); // add the missing part
-		}
-	}
-	return crc;
-}
 
 char *lefttrim(char *str) {
 	while (*str == ' ') str++;
@@ -315,7 +297,7 @@ int main(){
 
 	// DS18B20
 	ds18b20_init();
-	crc = calculateCRC(rom_code.rom_code, 7);
+	crc = onewire_calculate_crc(rom_code.rom_code, 7);
 	//	crc = rom_code.rom_code[0];
 	if (rom_code.crc != crc){
 	  buffer[3]=0;

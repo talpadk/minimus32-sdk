@@ -68,3 +68,21 @@ uint8_t onewire_read_byte(void){
   return result;
 }
 
+uint8_t onewire_calculate_crc(uint8_t *buffer, uint8_t length){
+  uint8_t crc = 0;
+  uint8_t tmp;
+  uint8_t i, j, input_bit;
+  for (i=0; i<length; i++) {
+    tmp = buffer[i];
+    for (j=0; j<8; j++){
+      input_bit = (crc ^ tmp) & 1; // first xor
+      
+      if (input_bit) crc = crc ^ 0x18; // xor the top line in the crc (minus the last part)
+      
+      crc = crc >> 1; // the cyclic part
+      tmp = tmp >> 1;
+      crc = crc | (input_bit<<7); // add the missing part
+    }
+  }
+  return crc;
+}
