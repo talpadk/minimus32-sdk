@@ -51,6 +51,7 @@
 #include <util/atomic.h>
 #include <string.h>
 #include <stdio.h>
+#include <util/delay.h>
 
 #include "minimus32.h"
 #include "watchdog.h"
@@ -90,10 +91,6 @@ uint8_t get_bit(void){
 		return 1<<7;
 	else
 		return 0;
-}
-
-ISR(INT4_vect) {
-	onewire_interrupt();
 }
 
 void assertReset()   { PORTB &= ~(1<<PB5); }
@@ -172,6 +169,7 @@ uint8_t printState_ = 0;
 void printTemp(void *data) {
   	int i;
 	int decimal;
+	//char buf[8];
 	if (printState_ == 0) {
 		// Conversion
 		printState_ = 1;
@@ -185,6 +183,7 @@ void printTemp(void *data) {
 			ds18s20_blocking_read_scratchpad(&rom_code, &scratchpad);
 		}
 		
+		//ds18s10_blocking_print_temp(&scratchpad, buf);
 		int16_t temp = (scratchpad.temperature_msb<<8)+scratchpad.temperature_lsb;
 
 		char sign = ' ';
@@ -238,7 +237,8 @@ void printTemp(void *data) {
 		}
 
 		ATOMIC_BLOCK(ATOMIC_FORCEON) {
-			strcpy(loggerTemp, buffer);
+		  //strcpy(buffer, buf);
+		        strcpy(loggerTemp, buffer);
 			pcd8544_print(8, 1, buffer, &vertical_byte_font_12x16);
 		}
 	}
@@ -274,23 +274,18 @@ void printLogged(void *data) {
 }
 
 void ds18b20_init(void) {
-	onewire_init(4, &pull_low, &release, &get_bit);
-	onewire_wait_idle();
-	onewire_send_byte(0x33);
-	onewire_wait_idle();
+	onewire_init(&pull_low, &release, &get_bit);
+	onewire_send_byte(ONEWIRE_READ_ROM);
 
 	for (uint8_t b=0; b<7; b++) {
-		onewire_start_read_byte();
-		onewire_wait_idle();
-		rom_code.rom_code[b] = onewire_get_buffer();
+		rom_code.rom_code[b] = onewire_read_byte();
 	}
-
-	onewire_start_read_byte();
-	onewire_wait_idle();
-	rom_code.crc = onewire_get_buffer();
+	rom_code.crc = onewire_read_byte();
 }
 
 int main(){
+  char buffer[4];
+  uint8_t crc;
 	watchdog_disable();
 	minimus32_init();
 	clock_prescale_none();
@@ -320,6 +315,22 @@ int main(){
 
 	// DS18B20
 	ds18b20_init();
+	crc = calculateCRC(rom_code.rom_code, 7);
+	//	crc = rom_code.rom_code[0];
+	if (rom_code.crc != crc){
+	  buffer[3]=0;
+	  buffer[2]=(crc%10)+'0'; crc/=10;
+	  buffer[1]=(crc%10)+'0'; crc/=10;
+	  buffer[0]=(crc)+'0';
+	  pcd8544_print(0, 1, buffer, &vertical_byte_font_6x8);
+	  while(1){
+	    _delay_ms(200);
+	    pcd8544_print(0, 0, "ROM CRC Error!", &vertical_byte_font_6x8);
+	    _delay_ms(200);
+	    pcd8544_print(0, 0, "              ", &vertical_byte_font_6x8);
+	    led_red_toggle();
+	  }
+	}
 
 	timer1_clock_init();
 	timer1_callback dummyPrintCallback; // Printing the temperature
