@@ -27,5 +27,6 @@ typedef struct {
   uint8_t crc;
 } ds18s20_scratchpad;
 
+void ds18s10_blocking_print_temp(ds18s20_scratchpad *scratchpad, char buffer[6]);
 
 #endif //MOD_DS18S20_H
