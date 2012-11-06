@@ -57,10 +57,6 @@ uint8_t get_bit(void){
   else return 0;
 }
 
-ISR(INT4_vect) {
-  onewire_interrupt();
-}
-
 void readAddress(){
   onewire_send_byte(0x33);
 }
@@ -88,26 +84,6 @@ void writeRomCode(void){
   writeHex(rom_code.rom_code[0]);
 }
 
-uint8_t calculateCRC(uint8_t *buffer, uint8_t length){
-  uint8_t crc=0;
-  uint8_t tmp;
-  uint8_t i,j,input_bit;
-  for (i=0; i<length; i++) {
-    tmp = buffer[i];
-    for (j=0; j<8; j++){
-      input_bit = (crc ^ tmp) & 1;//first xor
-
-      if (input_bit) crc = crc ^ 0x18; //xor the top line in the crc (minus the last part)
-
-      crc = crc >> 1; //the cyclic part
-      tmp = tmp >> 1;
-      crc = crc | (input_bit<<7); //add the missing part
-    }
-  }
-  return crc;
-}
-
-
 int16_t temp=0;
 
 void printTemp(void){
@@ -133,8 +109,6 @@ int main(){
   int i=0, j=0;
   ds18s20_scratchpad scratchpad;
 
-  onewire_state bus_state;
-
   watchdog_disable();
   minimus32_init();
   clock_prescale_none();
@@ -148,48 +122,19 @@ int main(){
 
   lcd_44780_set_custom_char(1, backslash);
 
-  onewire_init(4, &pull_low, &release, &get_bit);
-  //  pull_low();
-  //release();
-
-  onewire_wait_idle();
+  onewire_init(&pull_low, &release, &get_bit);
   onewire_send_byte(0x33);
-  onewire_wait_idle();
-  
-  onewire_start_read_byte();
-  onewire_wait_idle();
-  rom_code.rom_code[0]=onewire_get_buffer();
-
-  onewire_start_read_byte();
-  onewire_wait_idle();
-  rom_code.rom_code[1]=onewire_get_buffer();
-
-  onewire_start_read_byte();
-  onewire_wait_idle();
-  rom_code.rom_code[2]=onewire_get_buffer();
-  
-  onewire_start_read_byte();
-  onewire_wait_idle();
-  rom_code.rom_code[3]=onewire_get_buffer();
-
-  onewire_start_read_byte();
-  onewire_wait_idle();
-  rom_code.rom_code[4]=onewire_get_buffer();
-  
-  onewire_start_read_byte();
-  onewire_wait_idle();
-  rom_code.rom_code[5]=onewire_get_buffer();
-
-  onewire_start_read_byte();
-  onewire_wait_idle();
-  rom_code.rom_code[6]=onewire_get_buffer();
-  
-  onewire_start_read_byte();
-  onewire_wait_idle();
-  rom_code.crc=onewire_get_buffer();
+  rom_code.rom_code[0]=onewire_read_byte();
+  rom_code.rom_code[1]=onewire_read_byte();
+  rom_code.rom_code[2]=onewire_read_byte();
+  rom_code.rom_code[3]=onewire_read_byte();
+  rom_code.rom_code[4]=onewire_read_byte();
+  rom_code.rom_code[5]=onewire_read_byte();
+  rom_code.rom_code[6]=onewire_read_byte();
+  rom_code.crc=onewire_read_byte();
 
 
-  rom_crc = calculateCRC(rom_code.rom_code, 7);
+  rom_crc = onewire_calculate_crc(rom_code.rom_code, 7);
 
   while (1){
     lcd_44780_command(LCD_44780_GOTO_CMD);    
@@ -229,35 +174,27 @@ int main(){
 
 
 
-    bus_state = onewire_get_state();
-    if (bus_state == onewire_error_presence_pulse_missing){
-      lcd_44780_command(LCD_44780_GOTO_CMD+64);
-      lcd_44780_print(" Presence ERROR ");
+    //Show spinning anim
+    lcd_44780_command(LCD_44780_GOTO_CMD+64+15);
+    j++;
+    if (j>30){
+      anim++;
+      if (anim>3) anim = 0;
+      j=0;
     }
-    else {
-      //Show spinning anim
-      lcd_44780_command(LCD_44780_GOTO_CMD+64+15);
-      j++;
-      if (j>30){
-	anim++;
-	if (anim>3) anim = 0;
-	j=0;
-      }
-      
-      switch (anim){
-      case 0:
-	lcd_44780_write_byte('|', 0);
-	break;
-      case 1:
-	lcd_44780_write_byte('/', 0);
-	break;
-      case 2:
-	lcd_44780_write_byte('-', 0);
-	break;
-      case 3:
-	lcd_44780_write_byte(1, 0);
-      }
+    
+    switch (anim){
+    case 0:
+      lcd_44780_write_byte('|', 0);
+      break;
+    case 1:
+      lcd_44780_write_byte('/', 0);
+      break;
+    case 2:
+      lcd_44780_write_byte('-', 0);
+      break;
+    case 3:
+      lcd_44780_write_byte(1, 0);
     }
-
   }
 }
