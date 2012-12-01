@@ -590,7 +590,7 @@ int main() {
 
 	// Display
 	spi_config_io_for_master_mode();
-	pcd8544_init(&pcdIO, 30);
+	pcd8544_init(&pcdIO, 65);
 
 	// Logging LED
 	blinkLoggingLedOff();
