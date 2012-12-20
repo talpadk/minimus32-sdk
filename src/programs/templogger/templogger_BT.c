@@ -93,6 +93,7 @@ volatile int16_t program_w = 0;
 volatile uint16_t program_log = 10;
 char programChar[2] = " ";
 char runningChar[2] = " ";
+uint8_t alwaysRun = 0;
 
 void pull_low (void) {
 	DDRC  |= 1<<7;
@@ -321,7 +322,10 @@ void ds18b20_init(void) {
 }
 
 void setRelay() {
-	if (programChar[0] == 'R' && runningChar[0] == ' ') {
+	if (alwaysRun) {
+		relayStatus(1);
+		runningChar[0] = '+';
+	} else if (programChar[0] == 'R' && runningChar[0] == ' ') {
 //TODO: Test
 /*
 		int16_t deciTemp = 0;
@@ -363,7 +367,6 @@ void setRelay() {
 			deciTemp[c+1] = '\0';
 			break;
 		}
-//		if (deciTemp <= (program_c - program_d)) {
 		if (atoi(deciTemp) <= (program_c - program_d)) {
 			startRelayTimer();
 		} else {
@@ -373,7 +376,7 @@ void setRelay() {
 }
 
 void setProgramVariable(char* str) {
-	if (str[0] != 'R' && str[0] != 'S' && str[1] != ':') {
+	if (str[0] != 'R' && str[0] != 'S' && str[0] != '+' && str[0] != '-' && str[1] != ':') {
 		return;
 	}
 	char type = str[0];
@@ -403,6 +406,23 @@ void setProgramVariable(char* str) {
 	}
 	uint8_t changeFound = 0;
 	switch (type) {
+		case '+':
+			alwaysRun = 1;
+			relayStatus(1);
+		break;
+		case '-':
+			alwaysRun = 0;
+		case 'S':
+			// Deactivate program
+			programChar[0] = ' ';
+			relayStatus(0);
+			stopWaiting();
+		break;
+		case 'R':
+			if (program_c != 0 && program_d != 0 && program_t != 0 && program_w != 0) {
+				programChar[0] = 'R';
+			}
+		break;
 		case 'C':
 			if (program_c != deciTemp) {
 				changeFound = 1;
@@ -429,21 +449,6 @@ void setProgramVariable(char* str) {
 		break;
 		case 'L':
 			ATOMIC_BLOCK(ATOMIC_FORCEON) { program_log = deciTemp; }
-		break;
-		case 'R':
-			{
-				if (program_c != 0 && program_d != 0 && program_t != 0 && program_w != 0) {
-					programChar[0] = 'R';
-				}
-			}
-		break;
-		case 'S':
-			{
-				// Deactivate program
-				programChar[0] = ' ';
-				relayStatus(0);
-				stopWaiting();
-			}
 		break;
 	}
 	if (changeFound) {
@@ -639,7 +644,7 @@ int main() {
 	
 	// Run the main loop, and do ALL the magic
 	crc = onewire_calculate_crc(rom_code.rom_code, 7);
-	if (rom_code.crc != crc){
+	if (rom_code.crc != crc) {
 		buffer[3] = 0;
 		buffer[2] = (crc%10)+'0'; crc/=10;
 		buffer[1] = (crc%10)+'0'; crc/=10;
