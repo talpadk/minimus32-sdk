@@ -1,4 +1,4 @@
 src
 fonts
-LUFA/LUFA/Drivers
-LUFA/LUFA/Common
+LUFA_130303/LUFA/Common
+LUFA_130303/LUFA/Drivers

@@ -11,9 +11,11 @@ $cflags = "-mmcu=atmega32u2 -O3 -D F_CLOCK=16000000 -D F_CPU=16000000 -Wall -c -
 
 $cflags .= '-std=gnu99 -D MCU=ATMEGA32U2 -D BOARD=NONE -D USB_DEVICE_ONLY -D FIXED_CONTROL_ENDPOINT_SIZE=8 -D FIXED_NUM_CONFIGURATIONS=1 -D USE_FLASH_DESCRIPTORS -D USE_STATIC_OPTIONS="(USB_DEVICE_OPT_FULLSPEED | USB_OPT_REG_ENABLED | USB_OPT_AUTO_PLL)" -D INTERRUPT_CONTROL_ENDPOINT ';
 
+#LUFA settings
+$cflags .= '-D ARCH=ARCH_AVR8 -D F_USB=16000000 '; 
 
 $linker = $compiler;
-$ldflags = "-mmcu=atmega32u2 ";
+$ldflags = "-mmcu=atmega32u2 -O3 ";
 
 $testProgram = "./upload_and_test.sh ";
 

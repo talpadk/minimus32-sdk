@@ -505,7 +505,7 @@ sub parseFile
           push (@includeList, "\#link $linkName");
         }
       }
-      if ($line =~ /\/{2,3}(\#cflags|\#ldflags|\#exe|\#target|\lazylinking)(\s?[^\r^\n]*)/){
+      if ($line =~ /\/{2,3}(\#cflags|\#ldflags|\#exe|\#target|\#lazylinking|\#dontlink)(\s?[^\r^\n]*)/){
         push (@includeList, ($1.$2));
       }
     } 
@@ -910,24 +910,35 @@ sub findBuildFilesForFile
   my %linkMap = ();
   $linkMap{"$filename.$objectSuffix"} = " ";
   my $myLdFlags = $ldflags;
-  #filter list to contain only valid data
-  my @filterList;
+
+  #Parse the depends to look for #dontlink
+  my %dontLink=();
   for my $item (@linkList){
+      if ($item =~ /^#dontlink\s+(\S+)\s*/){
+	  $dontLink{$1}=1;
+      }
+  }
+
+  for my $item (@linkList){
+    #handle link statements 
     if ($item =~ /^#link\s+(\S+)\s*/){
       my $oFile = $1;
-      my $objFile = $oFile.".$objectSuffix";
-      if (!exists($linkMap{$objFile})){
-        $linkMap{$objFile}=" ";
-        findObjectFiles($oFile);
-        $objTime = getTime($buildDir.$objFile);
-        if ($exeTime <= $objTime){
-          $needsRebuild = 1;
-          if ($girlie){
-            print $colourGirlie."Do you like this new object file $objFile?".
-            " Well lets relink $filename$exeSuffix$colourNormal\n";
-          }
-        }        
-        $linkLine = $linkLine." $buildDir$objFile"
+      if (!exists($dontLink{$oFile})){
+	  #not explicitly told not to link the file, continue. 
+	  my $objFile = $oFile.".$objectSuffix";
+	  if (!exists($linkMap{$objFile})){
+	      $linkMap{$objFile}=" ";
+	      findObjectFiles($oFile);
+	      $objTime = getTime($buildDir.$objFile);
+	      if ($exeTime <= $objTime){
+		  $needsRebuild = 1;
+		  if ($girlie){
+		      print $colourGirlie."Do you like this new object file $objFile?".
+			  " Well lets relink $filename$exeSuffix$colourNormal\n";
+		  }
+	      }        
+	      $linkLine = $linkLine." $buildDir$objFile";
+	  }
       }
     }
     if ($item =~ /^#ldflags\s+(.*)\s*/){
