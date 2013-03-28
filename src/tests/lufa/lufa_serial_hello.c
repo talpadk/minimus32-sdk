@@ -8,7 +8,23 @@
 
 
 ///A hello world using the LUFA based virtual serial port
-
+/** 
+ * @file
+ * @author Visti Andresen
+ * @ingroup tests
+ *
+ * Hardware:
+ *
+ * Just a plain Minimus32 in a USB port
+ *
+ * Connect using 'minicom -oD /dev/ttyACM0' (you may have to change the port)
+ * 
+ * Use "dmeg" to determin the port.
+ *
+ * Red LED flashes when the USB port is connected
+ *
+ * Blue LED intensity can be controlled over the serial connection.
+ */
 
 #include "lufa_serial_hello.h"
 
@@ -260,13 +276,13 @@ const USB_Descriptor_String_t PROGMEM LanguageString = {
 };
 
 const USB_Descriptor_String_t PROGMEM ManufacturerString = {
-  .Header                 = {.Size = USB_STRING_LEN(11), .Type = DTYPE_String},
-  .UnicodeString          = L"Dean Camera"
+  .Header                 = {.Size = USB_STRING_LEN(21), .Type = DTYPE_String},
+  .UnicodeString          = L"The Minimus32 Toolkit"
 };
 
 const USB_Descriptor_String_t PROGMEM ProductString = {
-  .Header                 = {.Size = USB_STRING_LEN(13), .Type = DTYPE_String},
-  .UnicodeString          = L"LUFA CDC Demo"
+  .Header                 = {.Size = USB_STRING_LEN(25), .Type = DTYPE_String},
+  .UnicodeString          = L"LUFA CDC Helloworld Demo"
 };
 
 uint16_t CALLBACK_USB_GetDescriptor(const uint16_t wValue,
