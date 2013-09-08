@@ -22,6 +22,10 @@
 
 #define TIMER1_TICKS_PER_US (16)
 
+#define TIMER1_CLOCK_ONCE (0)
+#define TIMER1_CLOCK_REPEAT (1)
+#define TIMER1_NO_USER_DATA (0)
+
 /** 
  * A struct that keeps track of time since timer1_clock_init
  * 
