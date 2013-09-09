@@ -133,6 +133,8 @@ void timer1_clock_get_time(timer1_wall_time *time);
  */
 void timer1_clock_get_micro_time(uint16_t *msecs, uint16_t *ticks);
 
+uint16_t timer1_get_ticks();
+
 /** 
  * Resets the current "uptime"
  * Messes with already registered callbacks, so use with care!

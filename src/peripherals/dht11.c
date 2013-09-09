@@ -1,65 +1,138 @@
 #include "dht11.h"
 
-#include <avr/interrupt.h>
 #include <util/atomic.h>
+#include <avr/interrupt.h>
 
-#include "timer1_clock.h"
-
-
-io_setOutput dht11_setOutput_;
-io_outFunction dht11_out_;
-uint8_t dht11_extIr_;
-
-timer1_callback dth11_callback_;
-
-void dht11_setState(dht11_state state){
+void dht11_setState(dht11 *this, dht11_state state){
   ATOMIC_BLOCK(ATOMIC_FORCEON){
-    dht11_state_ = state;
+    this->state = state;
   }
 }
 
-void dht11_sendStartDone(void *data){
-  //bus hi with pull up
-  dht11_setOutput_(0);
-  dht11_out_(255);  
-
-  enable_external_interrupt_input(dht11_extIr_, falling);
-
-  dht11_setState(DHT11_WAITING_FOR_ACK);
+void dht11_init_data(dht11 *this){
+  this->rxByte = 0;
+  this->rxBit = 8;
+  this->data[0] = 0;
+  this->data[1] = 0;
+  this->data[2] = 0;
+  this->data[3] = 0;
+  this->data[4] = 0;
+  this->data_ready = 0;
 }
 
-void dht11_init(io_setOutput setOutput, io_outFunction out, uint8_t extIrq){
+
+void dht11_sendStartDone(void *data){
+  dht11 *this = (dht11*)data;
+  //bus hi-z with pull up
+  this->setOutput(0);
+  this->out(255);  
+
+  enable_external_interrupt_input(this->extIrq, falling);
+
+  dht11_setState(this, DHT11_WAITING_FOR_ACK);
+}
+
+
+void dht11_init(dht11 *this, io_setOutput setOutput, io_outFunction out, uint8_t extIrq){
   disable_external_interrupt_input(extIrq);
 
-  dht11_setOutput_  = setOutput;
-  dht11_out_ = out;
-  dht11_extIr_ = extIrq;
+  this->setOutput  = setOutput;
+  this->out = out;
+  this->extIrq = extIrq;
+
+  dht11_init_data(this);
 
   //bus hi with pull up
-  dht11_setOutput_(0);
-  dht11_out_(255);
+  this->setOutput(0);
+  this->out(255);
 
-  dht11_setState(DHT11_INIT);
+  dht11_setState(this, DHT11_STATE_INIT);
   
 }
 
-void dht11_irqAnimate(){
+void dht11_irqAnimate(dht11 *this){
+  dht11_state state;
+  uint16_t ticks = timer1_get_ticks();
+  state=dht11_getConversionState(this);
+
+  switch(state){
+  case DHT11_STATE_INIT:
+  case DHT11_IDLE:
+  case DHT11_SENDING_START:
+    //We should never be called by a interrupt here. 
+    dht11_setState(this, DHT11_STATE_INIT);
+    break;
+  case DHT11_WAITING_FOR_ACK:
+    enable_external_interrupt_input(this->extIrq, rising);
+    dht11_setState(this, DHT11_GOT_ACK_WAIT_IDLE);
+    break;
+  case DHT11_GOT_ACK_WAIT_IDLE:
+    dht11_setState(this, DHT11_WAITING_FOR_BIT_SYNC);
+    break;
+  case DHT11_WAITING_FOR_BIT_SYNC:
+    this->start_ticks = ticks;
+
+    enable_external_interrupt_input(this->extIrq, falling);
+    dht11_setState(this, DHT11_WAITING_FOR_BIT_END);
+    break;
+  case DHT11_WAITING_FOR_BIT_END:
+    if (ticks<=this->start_ticks) { ticks += TIMER1_TICKS_PER_US*1000; }
+
+    //Data sheet:0 bit = 26-28 us, 1 bit = 70 us
+    //Real 20->all 255, 25-> some data. 75->all 0, 70 some data
+    if ((ticks-this->start_ticks)>TIMER1_TICKS_PER_US*50){
+      //bit = 1
+      this->data[this->rxByte] = (this->data[this->rxByte]<<1) | 1;
+    }
+    else {
+      //bit = 0;
+      this->data[this->rxByte] = (this->data[this->rxByte]<<1);
+    }
+
+    this->rxBit--;
+    if (this->rxBit == 0) {
+      this->rxBit = 8;
+      this->rxByte++;
+    }
+    if (this->rxByte<5){
+      enable_external_interrupt_input(this->extIrq, rising);
+      dht11_setState(this, DHT11_WAITING_FOR_BIT_SYNC);
+    }
+    else {
+      dht11_setState(this, DHT11_IDLE);
+      disable_external_interrupt_input(this->extIrq);
+      this->data_ready = 1;
+    }
+    break;
+  }
 }
 
-void dht11_startConversion(){
-  dht11_setState(DHT11_SENDING_START);
+void dht11_startConversion(dht11 *this){
+  dht11_setState(this, DHT11_SENDING_START);
+
+  dht11_init_data(this);
 
   //Pull low
-  dht11_setOutput_(1);
-  dht11_out_(0);
+  this->setOutput(1);
+  this->out(0);
 
-  timer1_clock_register_callback (0,1, TIMER1_CLOCK_ONCE, dht11_sendStartDone, TIMER1_NO_USER_DATA, &dth11_callback_);
+  timer1_clock_register_callback (0,2, TIMER1_CLOCK_ONCE, dht11_sendStartDone, this, &(this->callback));
 }
 
-dht11_state dht11_getConversionState(){
+dht11_state dht11_getConversionState(dht11 *this){
   dht11_state result;
   ATOMIC_BLOCK(ATOMIC_FORCEON){
-    result = dht11_state_;
+    result = this->state;
   }
   return result;
+}
+
+
+uint8_t dht11_isDataReady(dht11 *this) {
+  return this->data_ready;
+}
+
+uint8_t dht11_isChecksumOk(dht11 *this) {
+  uint8_t sum = this->data[0]+this->data[1]+this->data[2]+this->data[3];
+  return sum==this->data[4];
 }
