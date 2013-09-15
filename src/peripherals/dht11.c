@@ -4,9 +4,7 @@
 #include <avr/interrupt.h>
 
 void dht11_setState(dht11 *this, dht11_state state){
-  ATOMIC_BLOCK(ATOMIC_FORCEON){
-    this->state = state;
-  }
+  this->state = state;
 }
 
 void dht11_init_data(dht11 *this){
@@ -52,58 +50,62 @@ void dht11_init(dht11 *this, io_setOutput setOutput, io_outFunction out, uint8_t
 
 void dht11_irqAnimate(dht11 *this){
   dht11_state state;
-  uint16_t ticks = timer1_get_ticks();
-  state=dht11_getConversionState(this);
+  uint16_t ticks;
 
-  switch(state){
-  case DHT11_STATE_INIT:
-  case DHT11_IDLE:
-  case DHT11_SENDING_START:
-    //We should never be called by a interrupt here. 
-    dht11_setState(this, DHT11_STATE_INIT);
-    break;
-  case DHT11_WAITING_FOR_ACK:
-    enable_external_interrupt_input(this->extIrq, rising);
-    dht11_setState(this, DHT11_GOT_ACK_WAIT_IDLE);
-    break;
-  case DHT11_GOT_ACK_WAIT_IDLE:
-    dht11_setState(this, DHT11_WAITING_FOR_BIT_SYNC);
-    break;
-  case DHT11_WAITING_FOR_BIT_SYNC:
-    this->start_ticks = ticks;
+  ATOMIC_BLOCK(ATOMIC_FORCEON){
+    ticks = timer1_get_ticks();
+    state=dht11_getConversionState(this);
 
-    enable_external_interrupt_input(this->extIrq, falling);
-    dht11_setState(this, DHT11_WAITING_FOR_BIT_END);
-    break;
-  case DHT11_WAITING_FOR_BIT_END:
-    if (ticks<=this->start_ticks) { ticks += TIMER1_TICKS_PER_US*1000; }
-
-    //Data sheet:0 bit = 26-28 us, 1 bit = 70 us
-    //Real 20->all 255, 25-> some data. 75->all 0, 70 some data
-    if ((ticks-this->start_ticks)>TIMER1_TICKS_PER_US*50){
-      //bit = 1
-      this->data[this->rxByte] = (this->data[this->rxByte]<<1) | 1;
-    }
-    else {
-      //bit = 0;
-      this->data[this->rxByte] = (this->data[this->rxByte]<<1);
-    }
-
-    this->rxBit--;
-    if (this->rxBit == 0) {
-      this->rxBit = 8;
-      this->rxByte++;
-    }
-    if (this->rxByte<5){
+    switch(state){
+    case DHT11_STATE_INIT:
+    case DHT11_IDLE:
+    case DHT11_SENDING_START:
+      //We should never be called by a interrupt here. 
+      dht11_setState(this, DHT11_STATE_INIT);
+      break;
+    case DHT11_WAITING_FOR_ACK:
       enable_external_interrupt_input(this->extIrq, rising);
+      dht11_setState(this, DHT11_GOT_ACK_WAIT_IDLE);
+      break;
+    case DHT11_GOT_ACK_WAIT_IDLE:
       dht11_setState(this, DHT11_WAITING_FOR_BIT_SYNC);
+      break;
+    case DHT11_WAITING_FOR_BIT_SYNC:
+      this->start_ticks = ticks;
+      
+      enable_external_interrupt_input(this->extIrq, falling);
+      dht11_setState(this, DHT11_WAITING_FOR_BIT_END);
+      break;
+    case DHT11_WAITING_FOR_BIT_END:
+      if (ticks<=this->start_ticks) { ticks += TIMER1_TICKS_PER_US*1000; }
+      
+      //Data sheet:0 bit = 26-28 us, 1 bit = 70 us
+      //Real 20->all 255, 25-> some data. 75->all 0, 70 some data
+      if ((ticks-this->start_ticks)>TIMER1_TICKS_PER_US*50){
+	//bit = 1
+	this->data[this->rxByte] = (this->data[this->rxByte]<<1) | 1;
+      }
+      else {
+	//bit = 0;
+	this->data[this->rxByte] = (this->data[this->rxByte]<<1);
+      }
+
+      this->rxBit--;
+      if (this->rxBit == 0) {
+	this->rxBit = 8;
+	this->rxByte++;
+      }
+      if (this->rxByte<5){
+	enable_external_interrupt_input(this->extIrq, rising);
+	dht11_setState(this, DHT11_WAITING_FOR_BIT_SYNC);
+      }
+      else {
+	dht11_setState(this, DHT11_IDLE);
+	disable_external_interrupt_input(this->extIrq);
+	this->data_ready = 1;
+      }
+      break;
     }
-    else {
-      dht11_setState(this, DHT11_IDLE);
-      disable_external_interrupt_input(this->extIrq);
-      this->data_ready = 1;
-    }
-    break;
   }
 }
 
@@ -120,11 +122,7 @@ void dht11_startConversion(dht11 *this){
 }
 
 dht11_state dht11_getConversionState(dht11 *this){
-  dht11_state result;
-  ATOMIC_BLOCK(ATOMIC_FORCEON){
-    result = this->state;
-  }
-  return result;
+  return this->state;
 }
 
 
