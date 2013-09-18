@@ -6,6 +6,24 @@
 //#dontlink MassStorageClassDevice
 //#dontlink HIDParser
 
+/**
+ * @file   dht11_test.c
+ * @author Visti Andresen 
+ * @ingroup tests
+ *
+ * @brief  A test program for reading the values out of an DHT11 humidity sensor
+ * 
+ * The program creates a virtual serial port using the USB hardware
+ *
+ * Red  blinking             = Program is running<br>
+ *
+ * Hardware:<br>
+ * Vcc        -> DHT11.pin1<br>
+ * PD0 (INT0) -> DHT11.pin2 (should have a pull up)<br>
+ * GND        -> DHT11.pin4<br>
+ */
+
+
 
 #include "LUFAConfig_test_only.h"
 
@@ -31,13 +49,22 @@ void sensorOutFunction(unsigned char data){
 }
 
 dht11 sensor_;
-uint8_t timeouts_=0;
-uint8_t checksumErrors_=0;
+uint16_t reads_=0;
+uint16_t timeouts_=0;
+uint16_t checksumErrors_=0;
 uint8_t temp_, moist_;
 uint8_t first_run_=1;
 
 void intOut(unsigned char data){
   fputc((data/100)+'0', &USBSerialStream_);
+  fputc(((data/10)%10)+'0', &USBSerialStream_);
+  fputc((data%10)+'0', &USBSerialStream_);
+}
+
+void int16Out(uint16_t data){
+  fputc(((data/10000)%10)+'0', &USBSerialStream_);
+  fputc(((data/1000)%10)+'0', &USBSerialStream_);
+  fputc(((data/100)%10)+'0', &USBSerialStream_);
   fputc(((data/10)%10)+'0', &USBSerialStream_);
   fputc((data%10)+'0', &USBSerialStream_);
 }
@@ -76,16 +103,26 @@ void showData(void *data){
   intOut(temp_);
   fputs(" C\r\n", &USBSerialStream_);
 
-  fputs("Moist ", &USBSerialStream_);
+  fputs("Humi ", &USBSerialStream_);
   intOut(moist_);
   fputs(" %\r\n", &USBSerialStream_);
 
-  fputs("Timeouts ", &USBSerialStream_);
-  intOut(timeouts_);
+  fputs("\r\n\r\nSTATS:\r\n======\n\r", &USBSerialStream_);
+  fputs("Reads total     ", &USBSerialStream_);
+  int16Out(reads_);
+  fputs("\r\n", &USBSerialStream_);
+
+  fputs("% with errors   ", &USBSerialStream_);
+  int16Out((timeouts_+checksumErrors_)*100/reads_);
+  fputs("\r\n", &USBSerialStream_);
+
+
+  fputs("Timeouts        ", &USBSerialStream_);
+  int16Out(timeouts_);
   fputs("\r\n", &USBSerialStream_);
 
   fputs("Checksum errors ", &USBSerialStream_);
-  intOut(checksumErrors_);
+  int16Out(checksumErrors_);
   fputs("\r\n", &USBSerialStream_);
 
   //Notice this is illegal and may give broken data, for debug only
@@ -112,6 +149,7 @@ void showData(void *data){
 void readSensor(void *data){
   if (!first_run_){
     //Data conversion needs to have been started
+    reads_++;
     if (dht11_isDataReady(&sensor_)){
       if (dht11_isChecksumOk(&sensor_)){
 	temp_=sensor_.data[2];
@@ -148,8 +186,8 @@ int main(void) {
   sei();
 
   timer1_clock_init();
-  timer1_clock_register_callback(0, 250, 1, &showData, 0, &showDataCallBack);
-  timer1_clock_register_callback(1, 0, 1, &readSensor, 0, &readSensorCallBack);
+  timer1_clock_register_callback(0, 447, 1, &showData, 0, &showDataCallBack);
+  timer1_clock_register_callback(1, 000, 1, &readSensor, 0, &readSensorCallBack);
 
   dht11_init(&sensor_, &sensorSetOutput, &sensorOutFunction, 0);
   while(1){

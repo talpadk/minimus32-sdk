@@ -5,6 +5,18 @@
 #include "external_interrupt.h" 
 #include "timer1_clock.h"
 
+/**
+ * @file   dht11.h
+ * @author Visti Andresen 
+ * @ingroup per
+ *
+ * @brief  Driver for DHT11 sensors
+ *
+ * As it is interrupt driven and timing critical there may be timeouts and read errors 
+ * 
+ * 
+ */
+
 
 typedef enum {
   DHT11_STATE_INIT=0,
@@ -36,14 +48,19 @@ typedef struct {
 /** 
  * Initializes the dth11 sensor system
  * Can be used to reconfigure the IO functions between conversions
- * 
+ *
+ * @param this the DHT11 sensor this opperation works on
  * @param setOutput the io function pointer used to change the pin from input to output
  * @param out the io function pointer for setting the pin
  * @param extIrq the external interrupt associated with the IO pin
  */
 void dht11_init(dht11 *this, io_setOutput setOutput, io_outFunction out, uint8_t extIrq);
 
-
+/** 
+ * Should be called from the interrupt handler for the extIrq given durring init
+ * 
+ * @param this the DHT11 sensor this opperation works on
+ */
 void dht11_irqAnimate(dht11 *this);
 
 /** 
@@ -51,7 +68,6 @@ void dht11_irqAnimate(dht11 *this);
  * Prior to calling this the timer1_clock MUST be initialized and running
  * 
  */
-
 void dht11_startConversion(dht11 *this);
 
 /** 
