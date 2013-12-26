@@ -17,7 +17,11 @@
  * 
  */
 
-
+/**
+ * @brief The intearnal state of the DTH11 sensor, mostely for debugging
+ *
+ * @see dht11_isDataReady
+ */
 typedef enum {
   DHT11_STATE_INIT=0,
   DHT11_IDLE,
@@ -46,7 +50,8 @@ typedef struct {
 } dht11;
 
 /** 
- * Initializes the dth11 sensor system
+ * @brief Initializes the dth11 sensor system
+ *
  * Can be used to reconfigure the IO functions between conversions
  *
  * @param this the DHT11 sensor this opperation works on
@@ -57,6 +62,8 @@ typedef struct {
 void dht11_init(dht11 *this, io_setOutput setOutput, io_outFunction out, uint8_t extIrq);
 
 /** 
+ * @brief IRQ handler should call this
+ *
  * Should be called from the interrupt handler for the extIrq given durring init
  * 
  * @param this the DHT11 sensor this opperation works on
@@ -64,14 +71,17 @@ void dht11_init(dht11 *this, io_setOutput setOutput, io_outFunction out, uint8_t
 void dht11_irqAnimate(dht11 *this);
 
 /** 
- * Starts the conversion cycle.
+ * @brief Starts the conversion cycle.
+ *
  * Prior to calling this the timer1_clock MUST be initialized and running
  * 
  */
 void dht11_startConversion(dht11 *this);
 
 /** 
- * Returns the state of the conversion, mostly for debugging.
+ * @brief Mostly a debugging function.
+ *
+ * Returns the state of the conversion.
  * Consider using dth11_isDataReady
  *
  * @see dht11_isDataReady
@@ -83,6 +93,8 @@ void dht11_startConversion(dht11 *this);
 dht11_state dht11_getConversionState(dht11 *this);
 
 /** 
+ * @brief Check for data conversion done.
+ *
  * After starting the conversion using dht11_startConversion
  * this function can be used to check if new data is awailable 
  * 
@@ -93,7 +105,7 @@ dht11_state dht11_getConversionState(dht11 *this);
 uint8_t dht11_isDataReady(dht11 *this);
 
 /** 
- * Returns true is the data checksum is valid
+ * @brief Returns true is the data checksum is valid
  * 
  * @param this the DHT11 sensor this opperation works on
  * 

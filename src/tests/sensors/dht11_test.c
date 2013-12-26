@@ -13,7 +13,8 @@
  *
  * @brief  A test program for reading the values out of an DHT11 humidity sensor
  * 
- * The program creates a virtual serial port using the USB hardware
+ * The program creates a virtual serial port using the USB hardware, data is send to this serial port.
+ * Connect a terminal program (minicom for instance) to this serial port to see the sensor data.
  *
  * Red  blinking             = Program is running<br>
  *
