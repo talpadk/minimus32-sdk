@@ -22,6 +22,10 @@
 
 #define TIMER1_TICKS_PER_US (16)
 
+#define TIMER1_CLOCK_ONCE (0)
+#define TIMER1_CLOCK_REPEAT (1)
+#define TIMER1_NO_USER_DATA (0)
+
 /** 
  * A struct that keeps track of time since timer1_clock_init
  * 
@@ -128,6 +132,8 @@ void timer1_clock_get_time(timer1_wall_time *time);
  * @param ticks the current tick (depends on the clock speed, 16 ticks per us @ 16MHz)
  */
 void timer1_clock_get_micro_time(uint16_t *msecs, uint16_t *ticks);
+
+uint16_t timer1_get_ticks();
 
 /** 
  * Resets the current "uptime"

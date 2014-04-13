@@ -279,6 +279,10 @@ void timer1_clock_get_micro_time(uint16_t *msecs, uint16_t *ticks) {
   }
 }
 
+uint16_t timer1_get_ticks(){
+  return TCNT1;
+}
+
 void timer1_clock_reset()
 { 
   ATOMIC_BLOCK(ATOMIC_FORCEON)
