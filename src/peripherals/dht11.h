@@ -14,7 +14,18 @@
  *
  * As it is interrupt driven and timing critical there may be timeouts and read errors 
  * 
+ * Usage:
+ * Setup a IRQ handler to call dht11_irqAnimate
+ * dht11_init(...)
+ *
+ * loop(){
+ *  dht11_startConversion(...)
+ *  wait(...)
+ *  check dht11_isDataReady(...) and take appropriate action
+ *  verify data intregrity using dht11_isChecksumOk(...)
+ * }
  * 
+ * @see dht11_test.c
  */
 
 /**
@@ -32,6 +43,13 @@ typedef enum {
   DHT11_WAITING_FOR_BIT_END
 } dht11_state;
 
+/** 
+ * Internal "privat" structure that contains information about the conversion state.
+ * Only exported here to allow for additional debugging info in dht11_test.
+ *
+ * Using this struct externally should be considered a bug.
+ * 
+ */
 typedef struct {
   dht11_state state;
   uint8_t rxByte;
@@ -58,6 +76,8 @@ typedef struct {
  * @param setOutput the io function pointer used to change the pin from input to output
  * @param out the io function pointer for setting the pin
  * @param extIrq the external interrupt associated with the IO pin
+ *
+ * @see external_interrupt.h
  */
 void dht11_init(dht11 *this, io_setOutput setOutput, io_outFunction out, uint8_t extIrq);
 
@@ -96,7 +116,11 @@ dht11_state dht11_getConversionState(dht11 *this);
  * @brief Check for data conversion done.
  *
  * After starting the conversion using dht11_startConversion
- * this function can be used to check if new data is awailable 
+ * this function can be used to check if new data is awailable.
+ * 
+ * If data isn't ready after an expected period it should be considered a timeout.
+ * If a timeout occures call dht11_startConversion to reset the bus and retry.
+ * One communication process is roughly 4ms long.
  * 
  * @param this the DHT11 sensor this opperation works on
  * 
@@ -112,5 +136,23 @@ uint8_t dht11_isDataReady(dht11 *this);
  * @return "true" if the checksum is valid
  */
 uint8_t dht11_isChecksumOk(dht11 *this);
+
+/** 
+ * Returns the temperature in deg C
+ * 
+ * @param this the DHT11 sensor this opperation works on
+ * 
+ * @return integer temperature reading
+ */
+uint8_t dht11_getTemperature(dht11 *this);
+
+/** 
+ * Returns the relative humidity in %
+ * 
+ * @param this the DHT11 sensor this opperation works on
+ * 
+ * @return integer humidity reading
+ */
+uint8_t dht11_getRelativeHumidity(dht11 *this);
 
 #endif //MOD_DHT11_H

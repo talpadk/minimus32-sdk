@@ -134,3 +134,11 @@ uint8_t dht11_isChecksumOk(dht11 *this) {
   uint8_t sum = this->data[0]+this->data[1]+this->data[2]+this->data[3];
   return sum==this->data[4];
 }
+
+uint8_t dht11_getTemperature(dht11 *this){
+  return this->data[2];
+}
+
+uint8_t dht11_getRelativeHumidity(dht11 *this){
+  return this->data[0];
+}

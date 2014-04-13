@@ -100,7 +100,7 @@ void showData(void *data){
     fputs("Waiting for end of bit\r\n", &USBSerialStream_);
     break;
   }
-  fputs("Temp  " , &USBSerialStream_);
+  fputs("Temp " , &USBSerialStream_);
   intOut(temp_);
   fputs(" C\r\n", &USBSerialStream_);
 
@@ -126,7 +126,8 @@ void showData(void *data){
   int16Out(checksumErrors_);
   fputs("\r\n", &USBSerialStream_);
 
-  //Notice this is illegal and may give broken data, for debug only
+  //Notice this is illegal and may give broken/partial data, for debug only
+  //Also private structures may change don't rely on them!
   fputs("\r\n\r\n", &USBSerialStream_);
   fputs("=== Debugging only, accesing private data. ===\r\n", &USBSerialStream_);
   fputs("===        Don't try this at home!         ===\r\n", &USBSerialStream_);
@@ -147,25 +148,29 @@ void showData(void *data){
   intOut(sensor_.rxBit-1);
 }
 
+//Called every second to update the data from the sensor
 void readSensor(void *data){
   if (!first_run_){
     //Data conversion needs to have been started
     reads_++;
     if (dht11_isDataReady(&sensor_)){
       if (dht11_isChecksumOk(&sensor_)){
-	temp_=sensor_.data[2];
-	moist_=sensor_.data[0];
+	temp_  = dht11_getTemperature(&sensor_);
+	moist_ = dht11_getRelativeHumidity(&sensor_);
       }
       else {
+	//Checksum failed, increment counter for the gui 
 	checksumErrors_++;
       }
     }
     else {
+      //Timeout, increment counter for the gui 
       timeouts_++;
     }
   }
   first_run_=0;
 
+  //Start another conversion
   dht11_startConversion(&sensor_);
 }
 
