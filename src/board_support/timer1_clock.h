@@ -1,6 +1,8 @@
 #ifndef MOD_TIMER1_CLOCK_H
 #define MOD_TIMER1_CLOCK_H
 
+#define USES_RESOURCE_TIMER1
+
 ///A time of day clock with call me every n msec functionality
 
 /**

@@ -3,6 +3,8 @@
 
 #include "serial.h"
 
+#define USES_RESOURCE_USART 1
+
 ///Code for using the async serial port (RS-232).
 
 /**
@@ -43,7 +45,7 @@ char async_serial_read_byte();
 void async_serial_write_byte(char data);
 
 /** 
- * Blocing write a string to the serial port
+ * Blocking write a string to the serial port
  * 
  * @param string the string to write
  */

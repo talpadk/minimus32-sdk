@@ -1,6 +1,8 @@
 #ifndef MOD_TIMER0_FAST_TIMER
 #define MOD_TIMER0_FAST_TIMER
 
+#define USES_RESOURCE_TIMER0 1
+
 ///Code for using the timer0 as a fast interrupt source.<br>
 
 /**
