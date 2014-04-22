@@ -15,21 +15,7 @@
 
 
 #include <stdint.h>
-
-typedef enum {
-  ///Stop timer 0
-  TIMER0_STOP = 0,
-  TIMER0_1    = 1,
-  TIMER0_8    = 2,
-  TIMER0_64   = 3,
-  TIMER0_256  = 4,
-  TIMER0_1024 = 5,
-  ///Clk source is TO falling edge
-  TIMER0_TO_F = 6,
-  ///Clk source is TO rising edge
-  TIMER0_TO_R = 7
-} timer0_prescaler;
-
+#include "timer0.h"
 
 /** 
  * Sets up the timer 0 to generate an interrupt every time prescaler*counter system clocks have passed.
