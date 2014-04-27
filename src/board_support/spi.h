@@ -27,10 +27,10 @@ typedef enum {
   SPI_DIVIDER_64_X2} SpiSpeed;
 
 ///Send the data with the most significan bit first (default)
-#define SPI_FLAG_MSB_FIRST (0);
+#define SPI_FLAG_MSB_FIRST (0)
 
 ///Sendt the data with the least significan bit first
-#define SPI_FLAG_LSB_FIRST (1<<DORD);
+#define SPI_FLAG_LSB_FIRST (1<<DORD)
 
 ///Be the bus master (default)
 /**
