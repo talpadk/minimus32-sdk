@@ -41,4 +41,6 @@ void lcd_ili9341_fill(uint16_t colour);
 void lcd_ili9341_drawColumnLine(uint16_t colour, uint8_t column, uint16_t startRow, uint16_t endRow);
 void lcd_ili9341_drawRowLine(uint16_t colour, uint16_t row, uint8_t startColumn, uint8_t endColumn);
 
+void lcd_ili9341_drawFilledRectangle(uint16_t colour, uint8_t startColumn, uint8_t endColumn, uint16_t startRow, uint16_t endRow);
+
 #endif //LCD_ILI9341_h

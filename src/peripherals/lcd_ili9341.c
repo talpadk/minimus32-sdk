@@ -209,3 +209,9 @@ void lcd_ili9341_drawRowLine(uint16_t colour, uint16_t row, uint8_t startColumn,
   lcd_ili9341_setRowAddress(row, row);
   lcd_ili9341_fillN(colour, endColumn-startColumn+1);
 }
+
+void lcd_ili9341_drawFilledRectangle(uint16_t colour, uint8_t startColumn, uint8_t endColumn, uint16_t startRow, uint16_t endRow){
+  lcd_ili9341_setRowAddress(startRow, endRow);
+  lcd_ili9341_setColumnAddress(startColumn, endColumn);
+  lcd_ili9341_fillNTimesM(colour,  endRow-startRow+1, endColumn-startColumn+1);
+}

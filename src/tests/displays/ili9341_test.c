@@ -18,6 +18,9 @@ PB5= reset
 
 #include <avr/io.h>
 #include <util/delay.h>
+#include <stdlib.h>
+
+
 #include "minimus32.h"
 #include "watchdog.h"
 #include "sys_clock.h"
@@ -53,6 +56,66 @@ void printUSBGreeting(){
   fputs("ILI9341 QVGA test\r\n\r\n", &USBSerialStream_);
 }
 
+#define BAR_WIDTH (6)
+#define BAR_MARGIN (2)
+#define BAR_BEGIN ((240-64*3)/2)
+
+#define BAR_AREA_RESERVED ((BAR_MARGIN+BAR_WIDTH)*4+BAR_MARGIN+1)
+
+void drawBaseScreen(void){
+  int i;
+  uint8_t startRow=BAR_MARGIN;
+  lcd_ili9341_drawFilledRectangle((31<<11)+(25<<5), 0, 239, 0, BAR_AREA_RESERVED-2);
+  lcd_ili9341_drawRowLine(ILI9341_COLOUR_BLACK, BAR_AREA_RESERVED-1, 0, 239);
+
+  for (i=0; i<32; i++){
+    lcd_ili9341_drawFilledRectangle(i<<11, BAR_BEGIN+i*6, BAR_BEGIN+i*6+5, startRow,startRow+BAR_WIDTH-1);
+  }
+  startRow += BAR_WIDTH+BAR_MARGIN;
+
+  for (i=0; i<64; i++){
+    lcd_ili9341_drawFilledRectangle(i<<5, BAR_BEGIN+i*3, BAR_BEGIN+i*3+2, startRow,startRow+BAR_WIDTH-1);
+  }
+  startRow += BAR_WIDTH+BAR_MARGIN;
+
+  for (i=0; i<32; i++){
+    lcd_ili9341_drawFilledRectangle(i, BAR_BEGIN+i*6, BAR_BEGIN+i*6+5, startRow,startRow+BAR_WIDTH-1);
+  }
+  startRow += BAR_WIDTH+BAR_MARGIN;
+
+  for (i=0; i<64; i++){
+    lcd_ili9341_drawFilledRectangle(((i>>1)<<11)+(i<<5)+(i>>1), BAR_BEGIN+i*3, BAR_BEGIN+i*3+2, startRow,startRow+BAR_WIDTH-1);
+  }
+
+  lcd_ili9341_drawFilledRectangle(ILI9341_COLOUR_WHITE, 0, 239, BAR_AREA_RESERVED, 319);
+
+}
+
+void drawRandomBox(void){
+  uint16_t colour = rand()+rand();
+  uint8_t width=(rand()%240)+1;
+  uint16_t height=(rand()%(320-BAR_AREA_RESERVED))+1;
+  uint16_t row;
+  uint8_t col;
+
+  if (width==240){
+    col=0;
+  }
+  else {
+    col = rand() % (240-width);
+  }
+
+  if (height==(320-BAR_AREA_RESERVED)){
+    row=0;
+  }
+  else {
+    row = rand() % ((320-BAR_AREA_RESERVED)-height);
+  }
+  row += BAR_AREA_RESERVED;
+
+  lcd_ili9341_drawFilledRectangle(colour, col, col+width-1, row, row+height-1);
+
+}
 
 int main(void){
   uint8_t manufacturer=0;
@@ -86,15 +149,12 @@ int main(void){
 
   lcd_ili9341_selectDevice(&display);
   lcd_ili9341_init();
-  lcd_ili9341_fill(ILI9341_COLOUR_RED); 
-  lcd_ili9341_fill(ILI9341_COLOUR_GREEN); 
-  lcd_ili9341_fill(ILI9341_COLOUR_BLUE); 
 
-  for (int i=7; i<240; i+=7){
-    lcd_ili9341_drawColumnLine(ILI9341_COLOUR_BLACK, i, 0, 339);
+  drawBaseScreen();
+
+  while (1){
+    drawRandomBox();
   }
-
-  lcd_ili9341_drawRowLine(ILI9341_COLOUR_BLACK, 7, 0, 14);
 
 
   lcd_ili9341_deselectDevice(&display);
