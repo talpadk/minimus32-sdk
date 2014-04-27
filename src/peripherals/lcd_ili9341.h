@@ -27,18 +27,18 @@ void lcd_ili9341_selectDevice(lcd_ili9341_device *device);
 void lcd_ili9341_deselectDevice(lcd_ili9341_device *device);
 
 
-void lcd_ili9341_readDisplayId(lcd_ili9341_device *device, uint8_t *manufacturer, uint8_t *driverVersion, uint8_t *driver);
+void lcd_ili9341_readDisplayId(uint8_t *manufacturer, uint8_t *driverVersion, uint8_t *driver);
 
-void lcd_ili9341_init(lcd_ili9341_device *device);
+void lcd_ili9341_init();
 
-void lcd_ili9341_setColumnAddress(lcd_ili9341_device *device, uint16_t start, uint16_t end);
-void lcd_ili9341_setRowAddress(lcd_ili9341_device *device, uint16_t start, uint16_t end);
+void lcd_ili9341_setColumnAddress(uint16_t start, uint16_t end);
+void lcd_ili9341_setRowAddress(uint16_t start, uint16_t end);
 
-void lcd_ili9341_fillN(lcd_ili9341_device *device, uint16_t colour, uint16_t countN);
-void lcd_ili9341_fillNTimesM(lcd_ili9341_device *device, uint16_t colour, uint16_t countN, uint8_t countM);
-void lcd_ili9341_fill(lcd_ili9341_device *device, uint16_t colour);
+void lcd_ili9341_fillN(uint16_t colour, uint16_t countN);
+void lcd_ili9341_fillNTimesM(uint16_t colour, uint16_t countN, uint8_t countM);
+void lcd_ili9341_fill(uint16_t colour);
 
-void lcd_ili9341_drawColumnLine(lcd_ili9341_device *device, uint16_t colour, uint8_t column, uint16_t startRow, uint16_t endRow);
-void lcd_ili9341_drawRowLine(lcd_ili9341_device *device, uint16_t colour, uint16_t row, uint8_t startColumn, uint8_t endColumn);
+void lcd_ili9341_drawColumnLine(uint16_t colour, uint8_t column, uint16_t startRow, uint16_t endRow);
+void lcd_ili9341_drawRowLine(uint16_t colour, uint16_t row, uint8_t startColumn, uint8_t endColumn);
 
 #endif //LCD_ILI9341_h

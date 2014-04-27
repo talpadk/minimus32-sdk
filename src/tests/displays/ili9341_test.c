@@ -85,16 +85,16 @@ int main(void){
   lcd_ili9341_obtainBus(1);
 
   lcd_ili9341_selectDevice(&display);
-  lcd_ili9341_init(&display);
-  lcd_ili9341_fill(&display, ILI9341_COLOUR_RED); 
-  lcd_ili9341_fill(&display, ILI9341_COLOUR_GREEN); 
-  lcd_ili9341_fill(&display, ILI9341_COLOUR_BLUE); 
+  lcd_ili9341_init();
+  lcd_ili9341_fill(ILI9341_COLOUR_RED); 
+  lcd_ili9341_fill(ILI9341_COLOUR_GREEN); 
+  lcd_ili9341_fill(ILI9341_COLOUR_BLUE); 
 
   for (int i=7; i<240; i+=7){
-    lcd_ili9341_drawColumnLine(&display, ILI9341_COLOUR_BLACK, i, 0, 339);
+    lcd_ili9341_drawColumnLine(ILI9341_COLOUR_BLACK, i, 0, 339);
   }
 
-  lcd_ili9341_drawRowLine(&display, ILI9341_COLOUR_BLACK, 7, 0, 14);
+  lcd_ili9341_drawRowLine(ILI9341_COLOUR_BLACK, 7, 0, 14);
 
 
   lcd_ili9341_deselectDevice(&display);
