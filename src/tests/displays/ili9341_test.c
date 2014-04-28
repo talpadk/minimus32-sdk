@@ -1,12 +1,5 @@
 //#exe
 
-//Lazy linking is too agressive, remove som problematic .o files
-//#dontlink AudioClassDevice
-//#dontlink HIDClassDevice
-//#dontlink MassStorageClassDevice
-//#dontlink HIDParser
-
-
 /*
 PB0=chip sel.
 PB1-3 = SPI
@@ -25,12 +18,7 @@ PB5= reset
 #include "watchdog.h"
 #include "sys_clock.h"
 #include "timer1_clock.h"
-#include "LUFAConfig_test_only.h"
-#include "vt100_codes.h"
-#include "usb_serial_helpers.h"
 #include "bitfont_6x8.h"
-
-static FILE USBSerialStream_;
 
 void setDataCommandPin(unsigned char value){
   value &= 0b00010000;
@@ -50,11 +38,6 @@ lcd_ili9341_device display = {
 
 void blink(void *data){
     led_red_toggle();
-}
-
-void printUSBGreeting(){
-  fputs(VT100_CLEAR_SCREEN, &USBSerialStream_);
-  fputs("ILI9341 QVGA test\r\n\r\n", &USBSerialStream_);
 }
 
 #define BAR_WIDTH (6)
@@ -127,9 +110,6 @@ void drawRandomBox(void){
 }
 
 int main(void){
-  uint8_t manufacturer=0;
-  uint8_t driverVersion=0;
-  uint8_t driver=0;
   timer1_callback blink_call_back;
 
   watchdog_disable();
@@ -139,9 +119,6 @@ int main(void){
   DDRB |= 0b00110000; //PB4-5=out
   
 
-  /*USB_Init();
-    CDC_Device_CreateStream(&VirtualSerial_CDC_Interface_, &USBSerialStream_);*/
-
   timer1_clock_init();
   
   PORTB &= ~0b00100000; //reset
@@ -150,9 +127,6 @@ int main(void){
   _delay_ms(100);
 
   timer1_clock_register_callback(0, 100, 1, &blink, 0, &blink_call_back);
-
-  printUSBGreeting();
-
 
   lcd_ili9341_obtainBus(1);
 
@@ -170,25 +144,6 @@ int main(void){
   lcd_ili9341_releaseBus();
  
   while(1){
-    /*lcd_ili9341_readDisplayId(&display, &manufacturer, &driverVersion, &driver);
-    fputs("Manufacture ID:    0x", &USBSerialStream_);
-    usb_serial_printHexByte(manufacturer, &USBSerialStream_);
-    fputs("\r\n", &USBSerialStream_);
-    fputs("Driver Version ID: 0x", &USBSerialStream_);
-    usb_serial_printHexByte(driverVersion, &USBSerialStream_);
-    fputs("\r\n", &USBSerialStream_);
-    fputs("Driver ID:         0x", &USBSerialStream_);
-    usb_serial_printHexByte(driver, &USBSerialStream_);
-    fputs("\r\n", &USBSerialStream_);*/
-    /*
-    CDC_Device_ReceiveByte(&VirtualSerial_CDC_Interface_);
-
-    CDC_Device_USBTask(&VirtualSerial_CDC_Interface_);
-    USB_USBTask();
-    _delay_ms(2000);*/
   }
-
-
-
   return 0;
 }
