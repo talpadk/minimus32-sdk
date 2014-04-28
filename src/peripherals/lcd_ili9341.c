@@ -44,71 +44,71 @@ void lcd_ili9341_readDisplayId(uint8_t *manufacturer, uint8_t *driverVersion, ui
 }
 
 void lcd_ili9341_init(){
-  lcd_ili9341_sendCommand(0xCB);
+  lcd_ili9341_sendCommand(ILI9341_CMD_POWER_CONTROL_A);
   spi_io(0x39);
   spi_io(0x2C);
   spi_io(0x00);
   spi_io(0x34);
   spi_io(0x02);
   
-  lcd_ili9341_sendCommand(0xCF);
+  lcd_ili9341_sendCommand(ILI9341_CMD_POWER_CONTROL_B);
   spi_io(0x00);
   spi_io(0XC1);
   spi_io(0X30);
   
-  lcd_ili9341_sendCommand(0xE8);
+  lcd_ili9341_sendCommand(ILI9341_CMD_DRIVER_TIMING_CONTROL_A1);
   spi_io(0x85);
   spi_io(0x00);
   spi_io(0x78);
   
-  lcd_ili9341_sendCommand(0xEA);
+  lcd_ili9341_sendCommand(ILI9341_CMD_DRIVER_TIMING_CONTROL_B);
   spi_io(0x00);
   spi_io(0x00);
   
-  lcd_ili9341_sendCommand(0xED);
+  lcd_ili9341_sendCommand(ILI9341_CMD_POWER_ON_SEQUENCE_CONTROL);
   spi_io(0x64);
   spi_io(0x03);
   spi_io(0X12);
   spi_io(0X81);
   
-  lcd_ili9341_sendCommand(0xF7);
+  lcd_ili9341_sendCommand(ILI9341_CMD_PUMP_RATIO_CONTROL);
   spi_io(0x20);
   
-  lcd_ili9341_sendCommand(0xC0); //Power control
+  lcd_ili9341_sendCommand(ILI9341_CMD_POWER_CONTROL_1);
   spi_io(0x23); //VRH[5:0]
   
-  lcd_ili9341_sendCommand(0xC1); //Power control
+  lcd_ili9341_sendCommand(ILI9341_CMD_POWER_CONTROL_2);
   spi_io(0x10); //SAP[2:0];BT[3:0]
   
-  lcd_ili9341_sendCommand(0xC5); //VCM control
+  lcd_ili9341_sendCommand(ILI9341_CMD_VCOM_CONTROL_1);
   spi_io(0x3e); //Contrast
   spi_io(0x28);
   
-  lcd_ili9341_sendCommand(0xC7); //VCM control2
+  lcd_ili9341_sendCommand(ILI9341_CMD_VCOM_CONTROL_2);
   spi_io(0x86); //--
   
-  lcd_ili9341_sendCommand(0x36); // Memory Access Control
+  lcd_ili9341_sendCommand(ILI9341_CMD_MEMORY_ACCESS_CONTROL);
   spi_io(0x48); //C8 //48 68绔栧睆//28 E8 妯睆
   
-  lcd_ili9341_sendCommand(0x3A);
+  lcd_ili9341_sendCommand(ILI9341_CMD_COLMOD_PIXEL_FORMAT_SET);
   spi_io(0x55);
   
-  lcd_ili9341_sendCommand(0xB1);
+  lcd_ili9341_sendCommand(ILI9341_CMD_FRAME_RATE_CONTROL_NORMAL_MODE);
   spi_io(0x00);
   spi_io(0x18);
   
-  lcd_ili9341_sendCommand(0xB6); // Display Function Control
+  lcd_ili9341_sendCommand(ILI9341_CMD_DISPLAY_FUNCTION_CONTROL); // Display Function Control
   spi_io(0x08);
   spi_io(0x82);
   spi_io(0x27);
   
-  lcd_ili9341_sendCommand(0xF2); // 3Gamma Function Disable
+  lcd_ili9341_sendCommand(ILI9341_CMD_ENABLE_3G); // 3Gamma Function Disable
   spi_io(0x00);
   
-  lcd_ili9341_sendCommand(0x26); //Gamma curve selected
+  lcd_ili9341_sendCommand(ILI9341_CMD_GAMMA_SET); //Gamma curve selected
   spi_io(0x01);
   
-  lcd_ili9341_sendCommand(0xE0); //Set Gamma
+  lcd_ili9341_sendCommand(ILI9341_CMD_POSITIVE_GAMMA_CORRECTION); //Set Gamma
   spi_io(0x0F);
   spi_io(0x31);
   spi_io(0x2B);
@@ -125,7 +125,7 @@ void lcd_ili9341_init(){
   spi_io(0x09);
   spi_io(0x00);
   
-  lcd_ili9341_sendCommand(0XE1); //Set Gamma
+  lcd_ili9341_sendCommand(ILI9341_CMD_NEGATIVE_GAMMA_CORRECTION); //Set Gamma
   spi_io(0x00);
   spi_io(0x0E);
   spi_io(0x14);
@@ -142,11 +142,11 @@ void lcd_ili9341_init(){
   spi_io(0x36);
   spi_io(0x0F);
   
-  lcd_ili9341_sendCommand(0x11); //Exit Sleep
+  lcd_ili9341_sendCommand(ILI9341_CMD_SLEEP_OUT); 
   //delay(120);
   
-  lcd_ili9341_sendCommand(0x29); //Display on
-  lcd_ili9341_sendCommand(0x2c);
+  lcd_ili9341_sendCommand(ILI9341_CMD_DISPLAY_ON); //Display on
+  lcd_ili9341_sendCommand(ILI9341_CMD_MEMORY_WRITE);
 }
 
 void lcd_ili9341_setColumnAddress(uint16_t start, uint16_t end){
