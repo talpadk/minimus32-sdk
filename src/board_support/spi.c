@@ -28,14 +28,11 @@ void spi_release_bus(void)
 }
 
 void spi_setup(SpiSpeed speed, uint8_t flags){
-  uint8_t tmp;
-
   flags = flags ^ ((1<<SPE)|(1<<MSTR));   //Toggle the inverse flags
   flags = flags | (speed&3);              //Mask and add speed
   SPCR = flags & (~(1<<SPE));             //Setup but disable (the disable part is only needed when in slave mode)
-  if (SPSR & ((1<<SPIF)|(1<<WCOL))) {
-    //clear SPIF and/ord WCOL
-    tmp = SPDR;
+  if ((SPSR & ((1<<SPIF)|(1<<WCOL))) && SPDR!=0) {
+    //clear SPIF and/or WCOL by reading SPDR
   }
   if (speed & (1<<3)) SPSR = 1; //Double speed
   else SPSR = 0;                //Regular speed
