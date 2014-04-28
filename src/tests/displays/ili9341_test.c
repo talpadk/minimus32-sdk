@@ -28,6 +28,7 @@ PB5= reset
 #include "LUFAConfig_test_only.h"
 #include "vt100_codes.h"
 #include "usb_serial_helpers.h"
+#include "bitfont_6x8.h"
 
 static FILE USBSerialStream_;
 
@@ -59,14 +60,22 @@ void printUSBGreeting(){
 #define BAR_WIDTH (6)
 #define BAR_MARGIN (2)
 #define BAR_BEGIN ((240-64*3)/2)
+#define FONT_WIDTH (6)
+#define FONT_HEIGHT (8)
 
-#define BAR_AREA_RESERVED ((BAR_MARGIN+BAR_WIDTH)*4+BAR_MARGIN+1)
+#define BAR_COLOUR ((31<<11)+(25<<5))
+
+#define BAR_AREA_RESERVED ((FONT_HEIGHT+BAR_MARGIN)*2+(BAR_MARGIN+BAR_WIDTH)*4+BAR_MARGIN+1)
 
 void drawBaseScreen(void){
   int i;
-  uint8_t startRow=BAR_MARGIN;
-  lcd_ili9341_drawFilledRectangle((31<<11)+(25<<5), 0, 239, 0, BAR_AREA_RESERVED-2);
+  uint8_t startRow=BAR_MARGIN+(FONT_HEIGHT+BAR_MARGIN);
+
+  lcd_ili9341_drawFilledRectangle(BAR_COLOUR, 0, 239, 0, BAR_AREA_RESERVED-2);
   lcd_ili9341_drawRowLine(ILI9341_COLOUR_BLACK, BAR_AREA_RESERVED-1, 0, 239);
+
+  lcd_ili9341_bitFontDrawString((240-20*FONT_WIDTH)/2,BAR_MARGIN, "ILI9341 Display test", &bitfont_6x8, ILI9341_COLOUR_WHITE, BAR_COLOUR);
+
 
   for (i=0; i<32; i++){
     lcd_ili9341_drawFilledRectangle(i<<11, BAR_BEGIN+i*6, BAR_BEGIN+i*6+5, startRow,startRow+BAR_WIDTH-1);

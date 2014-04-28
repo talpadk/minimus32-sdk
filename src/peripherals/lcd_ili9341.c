@@ -1,6 +1,6 @@
 #include "lcd_ili9341.h"
 #include "ili9341_defines.h"
-
+#include <avr/pgmspace.h> 
 
 io_outFunction lcd_ili9341_setDataCommand_;
 
@@ -214,4 +214,53 @@ void lcd_ili9341_drawFilledRectangle(uint16_t colour, uint8_t startColumn, uint8
   lcd_ili9341_setRowAddress(startRow, endRow);
   lcd_ili9341_setColumnAddress(startColumn, endColumn);
   lcd_ili9341_fillNTimesM(colour,  endRow-startRow+1, endColumn-startColumn+1);
+}
+
+void lcd_ili9341_bitFontDrawChar(uint8_t x, uint8_t y, uint8_t character, const bitfont *font, uint8_t fgHigh, uint8_t fgLow, uint8_t bgHigh, uint8_t bgLow){
+  const uint8_t *bits = font->bits+((uint16_t)font->char_size)*((uint16_t)(character-font->start));
+  uint8_t currentByte;
+  uint8_t bitCount = font->width*font->height;
+  uint8_t bytePos;
+
+  //Set up region
+  lcd_ili9341_setColumnAddress(x, x+font->width-1);
+  lcd_ili9341_setRowAddress(y, y+font->height-1);
+
+  //Send data 
+  lcd_ili9341_sendCommand(ILI9341_CMD_MEMORY_WRITE);
+
+  bytePos=8;
+  currentByte = pgm_read_byte(bits++);
+  while (bitCount!=0){
+    bitCount-=1;
+    if (currentByte & 128) {
+      spi_io(fgHigh);
+      spi_io(fgLow);
+    }
+    else {
+      spi_io(bgHigh);
+      spi_io(bgLow);
+    }
+    bytePos-=1;
+    if (bytePos==0){
+      bytePos=8;
+      currentByte = pgm_read_byte(bits++);
+    }
+    else {
+      currentByte = currentByte << 1;
+    }
+  }
+}
+
+void lcd_ili9341_bitFontDrawString(uint8_t x, uint8_t y, const char *string, const bitfont *font, uint16_t fg, uint16_t bg){
+  uint8_t character=*(string++);
+  uint8_t bgHigh = bg>>8;
+  uint8_t bgLow = bg & 0xff;
+  uint8_t fgHigh = fg>>8;
+  uint8_t fgLow = fg & 0xff;
+  while (character!=0){
+    lcd_ili9341_bitFontDrawChar(x,y, character, font, fgHigh, fgLow, bgHigh, bgLow);
+    x+=font->width;
+    character=*(string++);
+  }
 }

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "io_function.h"
 #include "spi.h"
+#include "bitfont.h"
 
 //min clock 100ns(10MHz write), 150ns(6,67MHz read) 
 //colour format(R:5-bit, G:6-bit, B:5-bit)
@@ -42,5 +43,8 @@ void lcd_ili9341_drawColumnLine(uint16_t colour, uint8_t column, uint16_t startR
 void lcd_ili9341_drawRowLine(uint16_t colour, uint16_t row, uint8_t startColumn, uint8_t endColumn);
 
 void lcd_ili9341_drawFilledRectangle(uint16_t colour, uint8_t startColumn, uint8_t endColumn, uint16_t startRow, uint16_t endRow);
+
+void lcd_ili9341_bitFontDrawChar(uint8_t x, uint8_t y, uint8_t character, const bitfont *font, uint8_t fgHigh, uint8_t fgLow, uint8_t bgHigh, uint8_t bgLow);
+void lcd_ili9341_bitFontDrawString(uint8_t x, uint8_t y, const char *string, const bitfont *font, uint16_t fg, uint16_t bg);
 
 #endif //LCD_ILI9341_h
