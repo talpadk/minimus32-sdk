@@ -47,6 +47,28 @@ uint8_t spi_io(uint8_t txData)
   return SPDR;
 }
 
+void spi_async_io_begin(uint8_t txData){
+  SPDR = txData;
+}
+
+void spi_async_io_wait(void){
+  while (!(SPSR & (1<<SPIF))){};
+}
+
+uint8_t spi_async_io(uint8_t txData){
+  uint8_t tmp;
+  while (!(SPSR & (1<<SPIF))){};
+  tmp = SPDR;
+  SPDR = txData;
+  return tmp;
+}
+
+uint8_t spi_async_io_end(void){
+  while (!(SPSR & (1<<SPIF))){};
+  return SPDR;
+}
+
+
 void spi_config_io_for_master_mode(void){
   DDRB &= ~0b00001000; //Set PB3 (MISO) as input
   DDRB |= 0b00000111; //Set PB0 (SS), PB1 (SCLK) and PB2 (MOSI) as output
