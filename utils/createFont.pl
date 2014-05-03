@@ -63,7 +63,7 @@ my $cFile;
 my $hFileName = $config{'output'}.'.h';
 my $cFileName = $config{'output'}.'.c';
 open($hFile, ">$hFileName") or die ("Cant write to $hFileName");
-open($cFile, ">$cFileName") or die ("Cant write to $hFileName");
+open($cFile, ">$cFileName") or die ("Cant write to $cFileName");
 
 
 print $hFile '#ifndef MOD_BIT_FONT_'.$config{'output'}."\n";
