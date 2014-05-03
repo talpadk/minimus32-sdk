@@ -19,6 +19,8 @@ PB5= reset
 #include "sys_clock.h"
 #include "timer1_clock.h"
 #include "bitfont_6x8.h"
+#include "tux_58_64.h"
+#include "sin64.h"
 
 void setDataCommandPin(unsigned char value){
   value &= 0b00010000;
@@ -109,6 +111,49 @@ void drawRandomBox(void){
 
 }
 
+int16_t calcSinPos(uint8_t angle, uint8_t amplitude, uint16_t offset){
+  int16_t tmp=angle;
+  if (tmp>=128) { tmp = 255-tmp; }
+
+  if (tmp>63) {
+    tmp = sin64[127-tmp];
+  }    
+  else {
+    tmp= sin64[tmp];
+  }
+  
+  tmp = tmp*(amplitude)/255;
+
+  if (angle>=128){ tmp=-tmp; }
+
+  return (offset)+tmp;
+}
+
+
+uint8_t tuxAngle_=0;
+#define TUX_RADIUS (90)
+void drawTuxAnim(void){
+  uint16_t x;
+  uint16_t y;
+
+  uint16_t xOffset = 240/2-58/2;
+  uint16_t yOffset = (320-BAR_AREA_RESERVED)/2+BAR_AREA_RESERVED-64/2;
+
+  y = calcSinPos(tuxAngle_, TUX_RADIUS, 0);
+  x = calcSinPos(tuxAngle_+64, TUX_RADIUS, 0);
+  lcd_ili9341_drawImage565(x+xOffset, y+yOffset, &tux_58_64);
+
+  y = calcSinPos(tuxAngle_+85*1, TUX_RADIUS, 0);
+  x = calcSinPos(tuxAngle_+85*1+64, TUX_RADIUS, 0);
+  lcd_ili9341_drawImage565(x+xOffset, y+yOffset, &tux_58_64);
+
+  y = calcSinPos(tuxAngle_+85*2, TUX_RADIUS, 0);
+  x = calcSinPos(tuxAngle_+85*2+64, TUX_RADIUS, 0);
+  lcd_ili9341_drawImage565(x+xOffset, y+yOffset, &tux_58_64);
+  
+  tuxAngle_+=1;
+}
+
 int main(void){
   timer1_callback blink_call_back;
 
@@ -136,7 +181,8 @@ int main(void){
   drawBaseScreen();
 
   while (1){
-    drawRandomBox();
+    //drawRandomBox();
+    drawTuxAnim();
   }
 
 
