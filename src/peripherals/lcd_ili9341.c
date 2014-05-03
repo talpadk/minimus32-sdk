@@ -20,6 +20,14 @@ void lcd_ili9341_sendCommand(uint8_t command){
   lcd_ili9341_setDataCommand_(io_PIN_HIGH);  
 }
 
+void lcd_ili9341_sendCommandAsyncBegin(uint8_t command){
+  lcd_ili9341_setDataCommand_(io_PIN_LOW);
+  spi_async_io_begin(command);
+  spi_async_io_wait();
+  lcd_ili9341_setDataCommand_(io_PIN_HIGH);  
+}
+
+
 uint8_t lcd_ili9341_obtainBus(uint8_t blocking){
   if (spi_obtain_bus(blocking)){
     //4 MHz @16MHz sys clock
@@ -44,6 +52,8 @@ void lcd_ili9341_readDisplayId(uint8_t *manufacturer, uint8_t *driverVersion, ui
 }
 
 void lcd_ili9341_init(){
+
+  //Default reset values
   lcd_ili9341_sendCommand(ILI9341_CMD_POWER_CONTROL_A);
   spi_io(0x39);
   spi_io(0x2C);
@@ -51,15 +61,16 @@ void lcd_ili9341_init(){
   spi_io(0x34);
   spi_io(0x02);
   
+
   lcd_ili9341_sendCommand(ILI9341_CMD_POWER_CONTROL_B);
   spi_io(0x00);
-  spi_io(0XC1);
-  spi_io(0X30);
+  spi_io(0XC1); //PCEQ+DRV_ena
+  spi_io(0X30); //DC_ena (esd prot)
   
   lcd_ili9341_sendCommand(ILI9341_CMD_DRIVER_TIMING_CONTROL_A1);
-  spi_io(0x85);
+  spi_io(0x85); //no overlapping gate drive
   spi_io(0x00);
-  spi_io(0x78);
+  spi_io(0x78); //2 unit precharge
   
   lcd_ili9341_sendCommand(ILI9341_CMD_DRIVER_TIMING_CONTROL_B);
   spi_io(0x00);
@@ -69,44 +80,46 @@ void lcd_ili9341_init(){
   spi_io(0x64);
   spi_io(0x03);
   spi_io(0X12);
-  spi_io(0X81);
+  spi_io(0X81); //DDVDH enhance mode(only for 8 external capacitors)
   
   lcd_ili9341_sendCommand(ILI9341_CMD_PUMP_RATIO_CONTROL);
-  spi_io(0x20);
+  spi_io(0x20); //DDVDH=2xVCI
   
   lcd_ili9341_sendCommand(ILI9341_CMD_POWER_CONTROL_1);
-  spi_io(0x23); //VRH[5:0]
+  spi_io(0x23); //VRH[5:0] (4.6V)
   
   lcd_ili9341_sendCommand(ILI9341_CMD_POWER_CONTROL_2);
-  spi_io(0x10); //SAP[2:0];BT[3:0]
+  spi_io(0x10); //SAP[2:0];BT[3:0] 0x10 is valid?
   
   lcd_ili9341_sendCommand(ILI9341_CMD_VCOM_CONTROL_1);
-  spi_io(0x3e); //Contrast
-  spi_io(0x28);
+  spi_io(0x3e); //Contrast (high = 4.25V) 
+  spi_io(0x28); //(low = -1.50v)
   
   lcd_ili9341_sendCommand(ILI9341_CMD_VCOM_CONTROL_2);
   spi_io(0x86); //--
   
   lcd_ili9341_sendCommand(ILI9341_CMD_MEMORY_ACCESS_CONTROL);
-  spi_io(0x48); //C8 //48 68绔栧睆//28 E8 妯睆
+  spi_io(0x48); //48=coloumn address order + BGR?
   
   lcd_ili9341_sendCommand(ILI9341_CMD_COLMOD_PIXEL_FORMAT_SET);
-  spi_io(0x55);
+  spi_io(0x55); //16bit rgb and mcu, default is 18
   
   lcd_ili9341_sendCommand(ILI9341_CMD_FRAME_RATE_CONTROL_NORMAL_MODE);
-  spi_io(0x00);
-  spi_io(0x18);
+  spi_io(0x00); //no clock division
+  spi_io(0x18); //78 Hz
   
-  lcd_ili9341_sendCommand(ILI9341_CMD_DISPLAY_FUNCTION_CONTROL); // Display Function Control
+  //incompleate command?
+  lcd_ili9341_sendCommand(ILI9341_CMD_DISPLAY_FUNCTION_CONTROL);
   spi_io(0x08);
   spi_io(0x82);
   spi_io(0x27);
   
-  lcd_ili9341_sendCommand(ILI9341_CMD_ENABLE_3G); // 3Gamma Function Disable
-  spi_io(0x00);
   
-  lcd_ili9341_sendCommand(ILI9341_CMD_GAMMA_SET); //Gamma curve selected
-  spi_io(0x01);
+  lcd_ili9341_sendCommand(ILI9341_CMD_ENABLE_3G);
+  spi_io(0x00); //disable should be 0b10?
+  
+  lcd_ili9341_sendCommand(ILI9341_CMD_GAMMA_SET);
+  spi_io(0x01); //curve 1
   
   lcd_ili9341_sendCommand(ILI9341_CMD_POSITIVE_GAMMA_CORRECTION); //Set Gamma
   spi_io(0x0F);
@@ -145,8 +158,8 @@ void lcd_ili9341_init(){
   lcd_ili9341_sendCommand(ILI9341_CMD_SLEEP_OUT); 
   //delay(120);
   
-  lcd_ili9341_sendCommand(ILI9341_CMD_DISPLAY_ON); //Display on
-  lcd_ili9341_sendCommand(ILI9341_CMD_MEMORY_WRITE);
+  lcd_ili9341_sendCommand(ILI9341_CMD_DISPLAY_ON); 
+  //lcd_ili9341_sendCommand(ILI9341_CMD_MEMORY_WRITE);
 }
 
 void lcd_ili9341_setColumnAddress(uint16_t start, uint16_t end){
@@ -181,13 +194,14 @@ void lcd_ili9341_fillNTimesM(uint16_t colour, uint16_t countN, uint8_t countM){
   uint8_t colourLow  = colour & 0xff;
   uint8_t i;
 
-  lcd_ili9341_sendCommand(ILI9341_CMD_MEMORY_WRITE);
+  lcd_ili9341_sendCommandAsyncBegin(ILI9341_CMD_MEMORY_WRITE);
   for (; countN!=0; countN--){
     for (i=countM; i!=0; i--){
-      spi_io(colourHigh);
-      spi_io(colourLow);
+      spi_async_io(colourHigh);
+      spi_async_io(colourLow);
     }
   }
+  spi_async_io_end();
 }
 
 void lcd_ili9341_fill(uint16_t colour){
@@ -263,4 +277,20 @@ void lcd_ili9341_bitFontDrawString(uint8_t x, uint8_t y, const char *string, con
     x+=font->width;
     character=*(string++);
   }
+}
+
+void lcd_ili9341_drawImage565(uint16_t x, uint16_t y, const image565 *image){
+  lcd_ili9341_setColumnAddress(x, x+image->width-1);
+  lcd_ili9341_setRowAddress(y, y+image->height-1);
+
+  const uint8_t *bytes = image->bytes;
+
+  lcd_ili9341_sendCommandAsyncBegin(ILI9341_CMD_MEMORY_WRITE);
+  for (uint16_t y=image->height; y!=0; y--){
+    for (uint16_t x=image->width; x!=0; x--){
+      spi_async_io(pgm_read_byte(bytes++));
+      spi_async_io(pgm_read_byte(bytes++));
+    }
+  }
+  spi_async_io_end();
 }
