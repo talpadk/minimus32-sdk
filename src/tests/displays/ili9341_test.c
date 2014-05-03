@@ -21,6 +21,7 @@ PB5= reset
 #include "bitfont_6x8.h"
 #include "tux_58_64.h"
 #include "sin64.h"
+#include "minmus32_100_36.h"
 
 void setDataCommandPin(unsigned char value){
   value &= 0b00010000;
@@ -83,6 +84,7 @@ void drawBaseScreen(void){
 
   lcd_ili9341_drawFilledRectangle(ILI9341_COLOUR_WHITE, 0, 239, BAR_AREA_RESERVED, 319);
 
+  lcd_ili9341_drawImage565((240-100)/2, (320-BAR_AREA_RESERVED-36)/2+BAR_AREA_RESERVED, &minmus32_100_36);
 }
 
 void drawRandomBox(void){
@@ -179,6 +181,8 @@ int main(void){
   lcd_ili9341_init();
 
   drawBaseScreen();
+
+
 
   while (1){
     //drawRandomBox();
