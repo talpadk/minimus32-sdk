@@ -45,8 +45,8 @@ void lcd_ili9341_drawRowLine(uint16_t colour, uint16_t row, uint8_t startColumn,
 
 void lcd_ili9341_drawFilledRectangle(uint16_t colour, uint8_t startColumn, uint8_t endColumn, uint16_t startRow, uint16_t endRow);
 
-void lcd_ili9341_bitFontDrawChar(uint8_t x, uint8_t y, uint8_t character, const bitfont *font, uint8_t fgHigh, uint8_t fgLow, uint8_t bgHigh, uint8_t bgLow);
-void lcd_ili9341_bitFontDrawString(uint8_t x, uint8_t y, const char *string, const bitfont *font, uint16_t fg, uint16_t bg);
+void lcd_ili9341_drawBitFontChar(uint8_t x, uint8_t y, uint8_t character, const bitfont *font, uint8_t fgHigh, uint8_t fgLow, uint8_t bgHigh, uint8_t bgLow);
+void lcd_ili9341_drawBitFontString(uint8_t x, uint8_t y, const char *string, const bitfont *font, uint16_t fg, uint16_t bg);
 
 void lcd_ili9341_drawImage565(uint16_t x, uint16_t y, const image565 *image);
 

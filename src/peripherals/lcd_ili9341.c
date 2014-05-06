@@ -230,7 +230,7 @@ void lcd_ili9341_drawFilledRectangle(uint16_t colour, uint8_t startColumn, uint8
   lcd_ili9341_fillNTimesM(colour,  endRow-startRow+1, endColumn-startColumn+1);
 }
 
-void lcd_ili9341_bitFontDrawChar(uint8_t x, uint8_t y, uint8_t character, const bitfont *font, uint8_t fgHigh, uint8_t fgLow, uint8_t bgHigh, uint8_t bgLow){
+void lcd_ili9341_drawBitFontChar(uint8_t x, uint8_t y, uint8_t character, const bitfont *font, uint8_t fgHigh, uint8_t fgLow, uint8_t bgHigh, uint8_t bgLow){
   const uint8_t *bits = font->bits+((uint16_t)font->char_size)*((uint16_t)(character-font->start));
   uint8_t currentByte;
   uint8_t bitCount = font->width*font->height;
@@ -266,14 +266,14 @@ void lcd_ili9341_bitFontDrawChar(uint8_t x, uint8_t y, uint8_t character, const 
   }
 }
 
-void lcd_ili9341_bitFontDrawString(uint8_t x, uint8_t y, const char *string, const bitfont *font, uint16_t fg, uint16_t bg){
+void lcd_ili9341_drawBitFontString(uint8_t x, uint8_t y, const char *string, const bitfont *font, uint16_t fg, uint16_t bg){
   uint8_t character=*(string++);
   uint8_t bgHigh = bg>>8;
   uint8_t bgLow = bg & 0xff;
   uint8_t fgHigh = fg>>8;
   uint8_t fgLow = fg & 0xff;
   while (character!=0){
-    lcd_ili9341_bitFontDrawChar(x,y, character, font, fgHigh, fgLow, bgHigh, bgLow);
+    lcd_ili9341_drawBitFontChar(x,y, character, font, fgHigh, fgLow, bgHigh, bgLow);
     x+=font->width;
     character=*(string++);
   }
