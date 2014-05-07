@@ -58,7 +58,7 @@ void drawBaseScreen(void){
   uint8_t startRow=BAR_MARGIN+(FONT_HEIGHT+BAR_MARGIN);
 
   lcd_ili9341_drawFilledRectangle(BAR_COLOUR, 0, 239, 0, BAR_AREA_RESERVED-2);
-  lcd_ili9341_drawRowLine(ILI9341_COLOUR_BLACK, BAR_AREA_RESERVED-1, 0, 239);
+  lcd_ili9341_drawHorizontalLine(ILI9341_COLOUR_BLACK, BAR_AREA_RESERVED-1, 0, 239);
 
   lcd_ili9341_drawBitFontString((240-20*FONT_WIDTH)/2,BAR_MARGIN, "ILI9341 Display test", &bitfont_6x8, ILI9341_COLOUR_WHITE, BAR_COLOUR);
 

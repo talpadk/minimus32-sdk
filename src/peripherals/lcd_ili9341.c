@@ -30,7 +30,7 @@ void lcd_ili9341_sendCommandAsyncBegin(uint8_t command){
 
 uint8_t lcd_ili9341_obtainBus(uint8_t blocking){
   if (spi_obtain_bus(blocking)){
-    //4 MHz @16MHz sys clock
+    //8 MHz @16MHz sys clock (write only clock speed)
     spi_setup(SPI_DIVIDER_2, SPI_FLAG_BUS_MASTER|SPI_FLAG_CLOCK_RISING|SPI_FLAG_ENABLE_SPI|SPI_FLAG_MSB_FIRST);
     return 1;
   }
@@ -162,7 +162,7 @@ void lcd_ili9341_init(){
   //lcd_ili9341_sendCommand(ILI9341_CMD_MEMORY_WRITE);
 }
 
-void lcd_ili9341_setColumnAddress(uint16_t start, uint16_t end){
+void lcd_ili9341_setXAddress(uint16_t start, uint16_t end){
   lcd_ili9341_sendCommand(ILI9341_CMD_COLUMN_ADDRESS_SET);
   spi_io(start >> 8);
   spi_io(start & 0xff);
@@ -170,7 +170,7 @@ void lcd_ili9341_setColumnAddress(uint16_t start, uint16_t end){
   spi_io(end   & 0xff);
 }
 
-void lcd_ili9341_setRowAddress(uint16_t start, uint16_t end){
+void lcd_ili9341_setYAddress(uint16_t start, uint16_t end){
   lcd_ili9341_sendCommand(ILI9341_CMD_PAGE_ADDRESS_SET);
   spi_io(start >> 8);
   spi_io(start & 0xff);
@@ -189,10 +189,10 @@ void lcd_ili9341_fillN(uint16_t colour, uint16_t countN){
   }
 }
 
-void lcd_ili9341_fillNTimesM(uint16_t colour, uint16_t countN, uint8_t countM){
+void lcd_ili9341_fillNTimesM(uint16_t colour, uint16_t countN, uint16_t countM){
   uint8_t colourHigh = colour >> 8;
   uint8_t colourLow  = colour & 0xff;
-  uint8_t i;
+  uint16_t i;
 
   lcd_ili9341_sendCommandAsyncBegin(ILI9341_CMD_MEMORY_WRITE);
   for (; countN!=0; countN--){
@@ -205,29 +205,29 @@ void lcd_ili9341_fillNTimesM(uint16_t colour, uint16_t countN, uint8_t countM){
 }
 
 void lcd_ili9341_fill(uint16_t colour){
-  lcd_ili9341_setColumnAddress(0,239);
-  lcd_ili9341_setRowAddress(0,339);
+  lcd_ili9341_setXAddress(0,239);
+  lcd_ili9341_setYAddress(0,339);
 
   lcd_ili9341_fillNTimesM(colour, 320, 240);
 }
 
-void lcd_ili9341_drawColumnLine(uint16_t colour, uint8_t column, uint16_t startRow, uint16_t endRow){
-  lcd_ili9341_setColumnAddress(column, column);
-  lcd_ili9341_setRowAddress(startRow, endRow);
-  lcd_ili9341_fillN(colour, endRow-startRow+1);
+void lcd_ili9341_drawVerticalLine(uint16_t colour, uint16_t x, uint16_t startY, uint16_t endY){
+  lcd_ili9341_setXAddress(x,x);
+  lcd_ili9341_setYAddress(startY, endY);
+  lcd_ili9341_fillN(colour, endY-startY+1);
 }
 
 
-void lcd_ili9341_drawRowLine(uint16_t colour, uint16_t row, uint8_t startColumn, uint8_t endColumn){
-  lcd_ili9341_setColumnAddress(startColumn, endColumn);
-  lcd_ili9341_setRowAddress(row, row);
-  lcd_ili9341_fillN(colour, endColumn-startColumn+1);
+void lcd_ili9341_drawHorizontalLine(uint16_t colour, uint16_t y, uint16_t startX, uint16_t endX){
+  lcd_ili9341_setXAddress(startX, endX);
+  lcd_ili9341_setYAddress(y,y);
+  lcd_ili9341_fillN(colour, endX-startX+1);
 }
 
-void lcd_ili9341_drawFilledRectangle(uint16_t colour, uint8_t startColumn, uint8_t endColumn, uint16_t startRow, uint16_t endRow){
-  lcd_ili9341_setRowAddress(startRow, endRow);
-  lcd_ili9341_setColumnAddress(startColumn, endColumn);
-  lcd_ili9341_fillNTimesM(colour,  endRow-startRow+1, endColumn-startColumn+1);
+void lcd_ili9341_drawFilledRectangle(uint16_t colour, uint16_t startX, uint16_t endX, uint16_t startY, uint16_t endY){
+  lcd_ili9341_setYAddress(startY, endY);
+  lcd_ili9341_setXAddress(startX, endX);
+  lcd_ili9341_fillNTimesM(colour,  endX-startX+1, endY-startY+1);
 }
 
 void lcd_ili9341_drawBitFontChar(uint8_t x, uint8_t y, uint8_t character, const bitfont *font, uint8_t fgHigh, uint8_t fgLow, uint8_t bgHigh, uint8_t bgLow){
@@ -237,8 +237,8 @@ void lcd_ili9341_drawBitFontChar(uint8_t x, uint8_t y, uint8_t character, const 
   uint8_t bytePos;
 
   //Set up region
-  lcd_ili9341_setColumnAddress(x, x+font->width-1);
-  lcd_ili9341_setRowAddress(y, y+font->height-1);
+  lcd_ili9341_setXAddress(x, x+font->width-1);
+  lcd_ili9341_setYAddress(y, y+font->height-1);
 
   //Send data 
   lcd_ili9341_sendCommand(ILI9341_CMD_MEMORY_WRITE);
@@ -280,8 +280,8 @@ void lcd_ili9341_drawBitFontString(uint8_t x, uint8_t y, const char *string, con
 }
 
 void lcd_ili9341_drawImage565(uint16_t x, uint16_t y, const image565 *image){
-  lcd_ili9341_setColumnAddress(x, x+image->width-1);
-  lcd_ili9341_setRowAddress(y, y+image->height-1);
+  lcd_ili9341_setXAddress(x, x+image->width-1);
+  lcd_ili9341_setYAddress(y, y+image->height-1);
 
   const uint8_t *bytes = image->bytes;
 
