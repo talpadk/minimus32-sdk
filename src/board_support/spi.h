@@ -27,10 +27,10 @@ typedef enum {
   SPI_DIVIDER_64_X2} SpiSpeed;
 
 ///Send the data with the most significan bit first (default)
-#define SPI_FLAG_MSB_FIRST (0);
+#define SPI_FLAG_MSB_FIRST (0)
 
 ///Sendt the data with the least significan bit first
-#define SPI_FLAG_LSB_FIRST (1<<DORD);
+#define SPI_FLAG_LSB_FIRST (1<<DORD)
 
 ///Be the bus master (default)
 /**
@@ -124,6 +124,37 @@ void spi_setup(SpiSpeed speed, uint8_t flags);
  * @return the data from the SPI slave
  */
 uint8_t spi_io(uint8_t txData);
+
+/** 
+ * Blocks of asynchronyous SPI IO should be wrapped in begin end blocks.
+ * The begin functions starts a SPI transfer with the given byte
+ * @see spi_async_io_end
+ * 
+ * @param txData the data to send to the SPI slave
+ */
+void spi_async_io_begin(uint8_t txData);
+
+/** 
+ * Waits/blocks for the current SPI transfer to be compleated, this can be used to syncronize other IO pins to the SPI data.
+ * 
+ */
+void spi_async_io_wait(void);
+
+/** 
+ * Sends a byte to the slave and returns the data returned by the slave from the previous transfer
+ * 
+ * @param txData the data to send to the slave
+ * 
+ * @return the data returned by the slave for the previous transfer
+ */
+uint8_t spi_async_io(uint8_t txData);
+
+/** 
+ * Waits/blocks the the current transfer to compleate and returns the last data from the slave
+ * 
+ * @return the data returned by the slave for the previous transfer
+ */
+uint8_t spi_async_io_end(void);
 
 /** 
  * Configures the IO pins for SPI as a bus master.

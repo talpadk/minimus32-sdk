@@ -13,6 +13,17 @@
  */
 
 /**
+ * @defgroup per_displays Display peripherals
+ * @ingroup per
+ * Support code for different types of display devices
+ * <br>
+ * Location: src/peripherals
+ */
+
+
+
+
+/**
  * @defgroup prog Programs
  * Actual programs intended to perform some kind of task.<br>
  * <br>
