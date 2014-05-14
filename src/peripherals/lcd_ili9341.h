@@ -7,6 +7,18 @@
 #include "bitfont.h"
 #include "image565.h"
 
+/**
+ * @file   lcd_ili9341.h
+ * @author Visti Andresen <talpa@Hermes.talpa.dk>
+ * @date   Tue May 13 18:26:27 2014
+ * 
+ * @brief  A driver for SPI based ILI9341 QVGA displays
+ * 
+ * @include per
+ * @ingroup per_displays
+ * 
+ */
+
 //min clock 100ns(10MHz write), 150ns(6,67MHz read) 
 //colour format(R:5-bit, G:6-bit, B:5-bit)
 

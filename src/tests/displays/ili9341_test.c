@@ -1,11 +1,37 @@
 //#exe
 
-/*
-PB0=chip sel.
-PB1-3 = SPI
-PB4= D/\C
-PB5= reset
+/**
+ * @file   ili9341_test.c
+ * @author Visti Andresen <talpa@Hermes.talpa.dk>
+ * @date   Tue May 13 07:45:02 2014
+ * 
+ * @brief  A test tha tests the ILI9341 QVGA driver
+ * @ingroup tests
+ * @ingroup tests_display
+ *
+ * Minimus MUST run on 3.3V!
+ * 
+ * Display.Vcc   <-> 5V (Confirm that display has an onboard 3.3V regulator or use a 3.3V supply)
+ *
+ * Display.GND   <-> GND
+ *
+ * Display.CS    <-> PB0
+ *
+ * Display.Reset <-> PB5
+ *
+ * Display.D/C   <-> PB4
+ *
+ * Display.MOSI  <-> PB2
+ *
+ * Display.SCK   <-> PB1
+ *
+ * Display.LED   <-> 100 Ohm <-> 5V (Have read online that 60 Ohm is okay but 100 Ohm gives me enough light
+ *
+ * Display.MISO  <-> PB3
+ * 
  */
+
+
 
 #include "lcd_ili9341.h"
 
