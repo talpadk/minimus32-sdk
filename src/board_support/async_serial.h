@@ -1,60 +1,25 @@
-#ifndef MOD_ASYNC_SERIAL
-#define MOD_ASYNC_SERIAL
+#ifndef ASYNC_SERIAL_H
+#define ASYNC_SERIAL_H
 
 #include "serial.h"
-
-///Code for using the async serial port (RS-232).
+#include "async_serial_1.h"
 
 /**
- * @file
- * @author Visti  Andresen
- * @ingroup bsp
- */
-
-/** 
- * Initialize the serial port
- *
- * @todo the init should take arguments defining speed and format
+ * @file   async_serial.h
+ * @author Visti Andresen <talpa@Hermes.talpa.dk>
+ * @date   Fri Dec 12 21:51:12 2014
+ * 
+ * @deprecated Please use one async_serial_1.h instead
+ * @brief  Deprecated wrapper for old programs
+ * 
  * 
  */
-void async_serial_init(SerialSpeed speed);
 
-/** 
- * Returns true if there are data available on the serial port 
- * 
- * @return true/false
- */
-char async_serial_byte_ready();
+inline void async_serial_init(SerialSpeed speed) {async_serial_1_init(speed);}
+inline char async_serial_byte_ready() {return async_serial_1_byte_ready();}
+inline char async_serial_read_byte() {return async_serial_1_read_byte();}
+inline void async_serial_write_byte(char data){async_serial_1_write_byte(data);}
+inline void async_serial_write_string(const char *string) {async_serial_1_write_string(string);}
+inline void async_serial_rx_interrupt(char on) {async_serial_1_rx_interrupt(on);}
 
-/** 
- * Blocking read a byte from the serial port
- * 
- * @see async_serial_byte_ready
- * @return a byte from the serial port
- */
-char async_serial_read_byte();
-
-/** 
- * Blocking write a byte to the serial port
- * 
- * @todo Write a output buffer empty test function
- * @param data 
- */
-void async_serial_write_byte(char data);
-
-/** 
- * Blocing write a string to the serial port
- * 
- * @param string the string to write
- */
-void async_serial_write_string(const char *string);
-
-/** 
- * Turns the recive complete interrupt on and off
- * Remember to implement a USART1_RX_vect interrupt handler routine.
- * 
- * @param on 0=off 
- */
-void async_serial_rx_interrupt(char on);
-
-#endif //MOD_ASYNC_SERIAL
+#endif /* ASYNC_SERIAL_H */
