@@ -16,22 +16,57 @@ void uint16PrintNull(uint16_t value, char *buffer){
 }
 
 
-void uint16PrintCenti(uint16_t value, char *buffer){
+void uint16PrintDesimal(uint16_t value, uint8_t decimals, char *buffer){
 	int8_t i;
-  for (i=4; i>=3; i--){
-		buffer[i+1]=(value%10)+'0';
+  int8_t digets;
+  
+  if (decimals>5) { decimals=5; }
+  digets = 5-decimals;
+  
+  for (i=0; i<decimals; i++){
+		buffer[5-i]=(value%10)+'0';
 		value /= 10;
 	} 
   
-  buffer[3]='.';
+  buffer[5-decimals]='.';
   
-	for (i=2; i>=0; i--){
-		buffer[i]=(value%10)+'0';
+	for (i=0; i<digets; i++){
+		buffer[5-decimals-1-i]=(value%10)+'0';
 		value /= 10;
 	} 
 }
 
-void uint16PrintCentiNull(uint16_t value, char *buffer){
-	uint16PrintCenti(value, buffer);
+void uint16PrintDecimalNull(uint16_t value, uint8_t decimals, char *buffer){
+  buffer[0]='X';
+  buffer[1]='X';
+  buffer[2]='X';
+  buffer[3]='X';
+  buffer[4]='X';
+  buffer[5]='X';
+	uint16PrintDesimal(value, decimals, buffer);
 	buffer[6]=0;    
+}
+
+void replaceLeadingZerosN(char *buffer, uint8_t n){
+  uint8_t count=0;
+  
+  while (*buffer=='0'){
+    *buffer = ' ';
+    buffer++;
+    count++;
+    if (n!=0 && count>=n){
+      break;
+    }   
+  }
+}
+
+void replaceLeadingZeros(char *buffer){
+  replaceLeadingZerosN(buffer, 0);
+}
+
+const char *findStartOfNumber(const char *buffer){
+  while (*buffer!=0 && (*buffer==' ' || *buffer=='0')){
+    buffer++;
+  }
+  return buffer;
 }
