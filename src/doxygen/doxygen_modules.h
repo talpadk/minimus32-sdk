@@ -33,6 +33,17 @@
  */
 
 /**
+ * @defgroup util Utilities
+ * Helper utility functions
+ * <br>
+ * Typically programs that manipulate data in memory in some way, examples could be CRC calculations, functions to print things, functions to manipulate generic data structures
+ * <br>
+ * Location: src/utils
+ */
+
+
+
+/**
  * @defgroup tests Test programs
  * Demo code that demonstrates the usage some of the ther code.<br>
  * Also used to during development to verify that the code works.<br>
