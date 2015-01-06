@@ -51,7 +51,7 @@ void ledAnimate(void *data){
 
 int main(void) {
   uint32_t supplyVoltage;
-	char buffer[7];
+	char buffer[UINT16_PRINT_DECIMAL_NULL_SIZE];
   timer1_callback ledTimer;
   
 	watchdog_disable();
@@ -86,8 +86,8 @@ int main(void) {
     //1024=5V from a 100k + 220k voltage divider  
 		supplyVoltage = adc_get_result();
     supplyVoltage = supplyVoltage*1600/1024;
-    uint16PrintCentiNull(supplyVoltage, buffer);
-
+    uint16PrintDecimalNull(supplyVoltage, 2, buffer);
+    replaceLeadingZeros(buffer);
 
 
 		async_serial_0_write_string(VT100_CURSOR_HOME);
