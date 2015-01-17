@@ -20,7 +20,7 @@ $cflags .= '-D ARCH=ARCH_AVR8 -D F_USB=16000000 ';
 $linker = $compiler;
 $ldflags = "-O3 ";
 
-$testProgram = "./upload_and_test.sh ";
+$testProgram = "./upload_DFU.sh ";
 
 sub autoFunction
 {
@@ -54,5 +54,15 @@ sub beforeCompileRunFunction
 		$cflags .= "-D MCU=ATMEGA32U2 -mmcu=atmega32u2 ";
 		$ldflags .= "-mmcu=atmega32u2 ";
 	}
+
+	#Auto detect programmer based on -mmcu in clags
+	if ($cflags =~ /-mmcu\s*=\s*(\w+)/){
+	    my $mcu = $1;
+	    if ($mcu eq "atmega328p"){
+		$testProgram = "./upload_ISP_usbasp.sh ";
+	    }
+	}
+	    
+	
 }
 $beforeCompileRunRef = \&beforeCompileRunFunction;
