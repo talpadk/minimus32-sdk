@@ -29,19 +29,6 @@ char adc_is_busy(void){
   return (ADCSRA & (1<<ADSC));
 }
 
-void adc_set_busy(void){
-	ADCSRA |= (1<<ADIF);
-}
-
-uint8_t adc_get_low_result(){
-	return ADCL;
-}
-
-
-uint8_t adc_get_hi_result(){
-	return ADCH;
-}
-
 uint16_t adc_get_result(){
   return ADC;
 }

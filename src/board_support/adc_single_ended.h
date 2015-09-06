@@ -99,28 +99,6 @@ void adc_disable(void);
 char adc_is_busy(void);
 
 /** 
- * Clears the busy/interrupt flag
- * 
- */
-void adc_set_busy(void);
-
-/** 
- * Returns the low byte of the last ADC conversion
- * 
- * 
- * @return the data from the register
- */
-uint8_t adc_get_low_result();
-
-/** 
- * Returns the hi byte of the last ADC conversion
- * 
- * 
- * @return the data from the register
- */
-uint8_t adc_get_hi_result();
-
-/** 
  * Returns the high and low byte of the last ADC conversion
  * 
  * 
