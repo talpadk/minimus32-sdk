@@ -61,15 +61,18 @@ void uint16PrintDecimal(uint16_t value, uint8_t decimals, char *buffer);
 void uint16PrintDecimalNull(uint16_t value, uint8_t decimals, char *buffer);
 
 /**
- * Replaces the first n leading zeroes in a string with spaces
+ * Replaces leading zeroes in a string with a length of n with spaces
+ * If the last character is '0' it will be left alone "00" turns into " 0" not "  " 
+ * If the last '0' found is not followed by a character in range '0'-'9' it too is left alone "00.9" turns into " 0.9" not "  .9" 
  *
  * @param buffer the buffer to replace '0' chars in.
- * @param n the number of character to replace at most, 0 has a special interpretation as "no limit"
+ * @param n the number of character to replace at most, 0 has a special interpretation as "no limit" / null terminated string.
  */
 void replaceLeadingZerosN(char *buffer, uint8_t n);
 
 /**
  * Replaces the leading zeroes in a string with spaces.
+ * @see replaceLeadingZerosN called with n=0 for more details
  *
  * @param buffer a null terminated string to replace in.
  */

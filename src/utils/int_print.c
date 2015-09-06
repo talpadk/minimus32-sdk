@@ -58,6 +58,10 @@ void replaceLeadingZerosN(char *buffer, uint8_t n){
       break;
     }   
   }
+  if ((n!=0 && count>=n) ||
+      ((*buffer>'9' || *buffer<'0') && count>0)){
+    *(buffer-1)='0';
+  }
 }
 
 void replaceLeadingZeros(char *buffer){
