@@ -3,11 +3,11 @@
 
 void adc_set_reference_and_adj(ADC_Reference reference, char alignLeft){
 	if (alignLeft) { alignLeft = 1<<ADLAR; }
-	ADMUX = (ADMUX & 0xF0) | reference | alignLeft;
+	ADMUX = (ADMUX & 0x0F) | reference | alignLeft;
 }
 
 void adc_set_channel(ADC_Channel channel){
-	ADMUX = (ADMUX & 0xF0) | channel;
+  ADMUX = (ADMUX & 0xF0) | channel;
 }
 
 void adc_set_speed_and_enable(ADC_Speed speed, char useAutoTrigger, char useInterrupts){
@@ -26,7 +26,7 @@ void adc_disable(void){
 }
 
 char adc_is_busy(void){
-	return !(ADCSRA & (1<<ADIF));
+  return (ADCSRA & (1<<ADSC));
 }
 
 void adc_set_busy(void){
@@ -43,5 +43,5 @@ uint8_t adc_get_hi_result(){
 }
 
 uint16_t adc_get_result(){
-	return (ADCH<<8)+ADCL;
+  return ADC;
 }
