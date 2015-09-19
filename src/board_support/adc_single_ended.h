@@ -52,6 +52,15 @@ typedef enum {
 	ADC_DIV_128=7
 } ADC_Speed;
 
+///Readability define for adc_set_speed_and_enable
+#define ADC_USE_INTERRUPTS (1)
+///Readability define for adc_set_speed_and_enable
+#define ADC_USE_POLLING (0)
+
+///Readability define for adc_set_speed_and_enable
+#define ADC_AUTO_TRIGGER (1)
+///Readability define for adc_set_speed_and_enable
+#define ADC_MANUAL_TRIGGER (0)
 
 /** 
  * Sets the reference voltage for the ADC full scale value
