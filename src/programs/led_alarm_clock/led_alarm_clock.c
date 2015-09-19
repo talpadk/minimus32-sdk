@@ -18,16 +18,14 @@
 #include "sys_clock.h"
 #include "vt100_codes.h"
 #include "async_serial_0.h"
-#include "adc_single_ended.h"
 #include "int_print.h"
 #include "sw_dither.h"
 //#include "timer0_fast_timer.h"
 #include "timer1_clock.h"
+#include "led_alarm_clock_adc.h"
 
 sw_dither blueLed;
 uint8_t blueLedOn;
-
-uint32_t current_=0;
 
 
 ISR(TIMER0_COMPB_vect) {
@@ -69,9 +67,6 @@ void setLedPWM(uint16_t setPoint){
 
 int main(void) {
   char inByte;
-  uint32_t adcValue;
-  uint32_t supplyVoltage;
-  uint32_t printValue;
   char buffer[UINT16_PRINT_DECIMAL_NULL_SIZE];
   timer1_callback ledTimer;
   
@@ -88,34 +83,22 @@ int main(void) {
   DDRD |= 0b01000000; //OC0A as output
 
   setLedPWM(0);
-  //TIMSK0 = 1<<OCIE0B;
   
   
   timer1_clock_init();
   timer1_clock_register_callback (0, 500, 1, &ledAnimate, 0, &ledTimer);
   
-
+  initADCSystem();
   
 	
   async_serial_0_init(SERIAL_SPEED_9600);
-
-  //ADCSRB |= 1<<ACME;
-  //adc_set_reference_and_adj(ADC_REF_1V1, 0);
-  adc_set_reference_and_adj(ADC_REF_AVCC, 0);
-  adc_set_channel(ADC1);
-  DIDR0 = 3;
-  //128kHZ @ 16MHZ
-  adc_set_speed_and_enable(ADC_DIV_128, 0, 0);
   
   sei(); //global int enable
   
   async_serial_0_write_string(VT100_CURSOR_OFF);
   async_serial_0_write_string(VT100_CLEAR_SCREEN);
+  
   while (1){
-
-    
-    //PORTB ^= 0b00100000;
-    
     if (async_serial_0_byte_ready()){
       inByte = async_serial_0_read_byte();
       if (inByte=='+' && ledPWM_<255){
@@ -127,40 +110,16 @@ int main(void) {
       
     }
 
-    adc_set_channel(ADC0);
-    adc_start_conversion();
-    while(adc_is_busy()){}
-    adcValue = adc_get_result();
-    //supplyVoltage = ((supplyVoltage*31)+adcValue)/32;
-    supplyVoltage = adcValue;
-    
-    //adc_set_channel(ADC_GND);
-    adc_set_channel(ADC1);
-    adc_start_conversion();
-    while(adc_is_busy()){}
-    adcValue = adc_get_result();
-    //current_ = ((current_*31)+adcValue)/32;
-    current_ = adcValue;
-    
     async_serial_0_write_string(VT100_CURSOR_HOME);
     async_serial_0_write_string("=== Hello world ===\r\n");
 
     
-    //1024=5V from a 100k + 220k voltage divider
-    printValue = supplyVoltage*1600/1024;
-    uint16PrintDecimalNull(printValue, 2, buffer);
+    uint16PrintDecimalNull(getInputVoltage(), 2, buffer);
     replaceLeadingZeros(buffer);
     async_serial_0_write_string(buffer);
     async_serial_0_write_string(" V\r\n");
 
-    //1024=5V 0.1 Ohm resistor and 19 times gain
-    //5V = 2631.57 mA @0.1 Ohm
-    //1V1 = 0.5789 @0.1 Ohm
-    //5V = 887.19 mA @ 0.3 Ohm
-    printValue = current_;
-    //printValue = printValue*579/1024; //1.1V reference
-    printValue = printValue*887/1024; //5V reference
-    uint16Print(printValue, buffer);
+    uint16Print(getLEDCurrent(), buffer);
     buffer[UINT16_PRINT_SIZE]=0;
     replaceLeadingZeros(buffer);
     async_serial_0_write_string(buffer);
