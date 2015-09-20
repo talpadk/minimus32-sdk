@@ -230,6 +230,19 @@ void lcd_ili9341_drawFilledRectangle(uint16_t colour, uint16_t startX, uint16_t 
   lcd_ili9341_fillNTimesM(colour,  endX-startX+1, endY-startY+1);
 }
 
+void lcd_ili9341_drawPixle(uint16_t colour, uint16_t x, uint16_t y);
+  uint8_t colourHigh = colour >> 8;
+  uint8_t colourLow = colour & 0xff;
+
+  lcd_ili9341_setYAddress(y,y);
+  lcd_ili9341_setXAddress(x,x);
+  lcd_ili9341_fillN(colour, 1){
+  /*lcd_ili9341_sendCommandAsyncBegin(ILI9341_CMD_MEMORY_WRITE);
+  spi_async_io(colourHigh);
+  spi_async_io(colourLow);
+  spi_async_io_end();*/
+}
+
 void lcd_ili9341_drawBitFontChar(uint8_t x, uint8_t y, uint8_t character, const bitfont *font, uint8_t fgHigh, uint8_t fgLow, uint8_t bgHigh, uint8_t bgLow){
   const uint8_t *bits = font->bits+((uint16_t)font->char_size)*((uint16_t)(character-font->start));
   uint8_t currentByte;
