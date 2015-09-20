@@ -10,6 +10,8 @@ uint16_t inputVoltage_ = 0;
 uint16_t ledTemperature_ = 0;
 uint16_t ledVoltage_ = 0;
 
+void (*currentCallback_)(uint16_t current_) = 0;
+  
 void startNextADCConversion(void){
   switch (adcConversionIndex_){
   default:
@@ -22,6 +24,9 @@ void startNextADCConversion(void){
   case 4:
     adc_set_channel(ADC3); //Select input LED voltage as mux input    
     current_ = adc_get_result();
+    if (currentCallback_ != 0){
+      currentCallback_(current_);
+    }
     break;
   case 1:
     inputVoltage_ = adc_get_result();
@@ -75,4 +80,9 @@ uint16_t getLEDCurrent(){
   //5V = 887.19 mA @ 0.3 Ohm , 19 times gain
   result = (result*887)/1024;
   return result;
+}
+
+
+void registerCurrentCallback(void (*callback)(uint16_t current_)){
+  currentCallback_ = callback;
 }

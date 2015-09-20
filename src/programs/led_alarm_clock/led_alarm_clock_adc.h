@@ -9,4 +9,6 @@ uint16_t getInputVoltage();
 
 uint16_t getLEDCurrent();
 
+void registerCurrentCallback(void (*callback)(uint16_t current_));
+
 #endif /* _LED_ALARM_CLOCK_ADC_H_ */

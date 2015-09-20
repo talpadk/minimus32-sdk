@@ -27,6 +27,8 @@
 sw_dither blueLed;
 uint8_t blueLedOn;
 
+#define PANIC_LED_CURRENT (700)
+
 
 ISR(TIMER0_COMPB_vect) {
   //current_=1000;
@@ -48,7 +50,7 @@ void ledAnimate(void *data){
   }
 }
 
-
+int16_t ledCurrentSP_ = 0;
 uint16_t ledPWM_ = 0;
 
 void setLedPWM(uint16_t setPoint){
@@ -65,10 +67,38 @@ void setLedPWM(uint16_t setPoint){
   }
 }
 
+
+void regulate(void *data){
+  int16_t spBandSize = ledCurrentSP_/10;
+  int16_t ledCurrent = getLEDCurrent();
+
+  if (spBandSize<2) { spBandSize=2; }
+    
+  if (ledCurrentSP_==0){
+    ledPWM_  = 0;
+  }
+  else {
+    if (ledPWM_<=255 && ledCurrentSP_-spBandSize>ledCurrent){
+      ledPWM_++;
+    }
+    else if (ledPWM_>0 && ledCurrentSP_+spBandSize<ledCurrent){
+      ledPWM_--;
+    }
+  }
+  setLedPWM(ledPWM_);
+}
+
+void ledCurrentCallback(uint16_t current){
+  if (current>PANIC_LED_CURRENT){
+    setLedPWM(0);
+  }
+}
+
 int main(void) {
   char inByte;
   char buffer[UINT16_PRINT_DECIMAL_NULL_SIZE];
   timer1_callback ledTimer;
+  timer1_callback regulateTimer;
   
   watchdog_disable();
   clock_prescale_none();	
@@ -87,9 +117,9 @@ int main(void) {
   
   timer1_clock_init();
   timer1_clock_register_callback (0, 500, 1, &ledAnimate, 0, &ledTimer);
-  
+  timer1_clock_register_callback (0, 100, 1, &regulate, 0, &regulateTimer);
   initADCSystem();
-  
+  registerCurrentCallback(&ledCurrentCallback);
 	
   async_serial_0_init(SERIAL_SPEED_9600);
   
@@ -101,11 +131,11 @@ int main(void) {
   while (1){
     if (async_serial_0_byte_ready()){
       inByte = async_serial_0_read_byte();
-      if (inByte=='+' && ledPWM_<255){
-	setLedPWM(ledPWM_+1);
+      if (inByte=='+' && ledCurrentSP_<600){
+	ledCurrentSP_+=10;
       }
-      else if (inByte=='-' && ledPWM_>0){
-	setLedPWM(ledPWM_-1);
+      else if (inByte=='-' && ledCurrentSP_>0){
+	ledCurrentSP_-=10;
       }
       
     }
@@ -130,6 +160,12 @@ int main(void) {
     replaceLeadingZeros(buffer);
     async_serial_0_write_string(buffer);
     async_serial_0_write_string(" PWM\r\n");
+
+    uint16Print(ledCurrentSP_, buffer);
+    buffer[UINT16_PRINT_SIZE]=0;
+    replaceLeadingZeros(buffer);
+    async_serial_0_write_string(buffer);
+    async_serial_0_write_string(" SP\r\n");
   }
   return 0;
 }
