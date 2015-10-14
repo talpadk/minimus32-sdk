@@ -5,10 +5,10 @@
 
 uint8_t adcConversionIndex_ = 0;
 
-uint16_t current_ = 0;
-uint16_t inputVoltage_ = 0;
-uint16_t ledTemperature_ = 0;
-uint16_t ledVoltage_ = 0;
+uint16_t rawCurrent_ = 0;
+uint16_t rawInputVoltage_ = 0;
+uint16_t rawLedTemperature_ = 0;
+uint16_t rawLedVoltage_ = 0;
 
 void (*currentCallback_)(uint16_t current_) = 0;
   
@@ -23,21 +23,21 @@ void startNextADCConversion(void){
     adc_set_channel(ADC2); //Select input LED temperature as mux input
   case 4:
     adc_set_channel(ADC3); //Select input LED voltage as mux input    
-    current_ = adc_get_result();
+    rawCurrent_ = adc_get_result();
     if (currentCallback_ != 0){
-      currentCallback_(current_);
+      currentCallback_(rawCurrent_);
     }
     break;
   case 1:
-    inputVoltage_ = adc_get_result();
+    rawInputVoltage_ = adc_get_result();
     adc_set_channel(ADC1);
     break;
   case 3:
-    ledTemperature_ = adc_get_result();
+    rawLedTemperature_ = adc_get_result();
     adc_set_channel(ADC1);
     break;
   case 5:
-    ledVoltage_ = adc_get_result();
+    rawLedVoltage_ = adc_get_result();
     adc_set_channel(ADC1);
     break;
   }
@@ -64,7 +64,7 @@ uint16_t getInputVoltage(){
   uint32_t result;
   
   ATOMIC_BLOCK(ATOMIC_FORCEON){
-    result = inputVoltage_;
+    result = rawInputVoltage_;
   }
   //1024=5V from a 100k + 220k voltage divider
   result = (result*1600)/1024;
@@ -75,14 +75,15 @@ uint16_t getLEDCurrent(){
   uint32_t result;
   
   ATOMIC_BLOCK(ATOMIC_FORCEON){
-    result = current_;
+    result = rawCurrent_;
   }
-  //5V = 887.19 mA @ 0.3 Ohm , 19 times gain
-  result = (result*887)/1024;
+  //5V = 877.19 mA @ 0.3 Ohm , 19 times gain
+  //3.3V = 578.94 mA @ 0.3 Ohm , 19 times gain
+  result = (result*579)/1024;
   return result;
 }
 
 
-void registerCurrentCallback(void (*callback)(uint16_t current_)){
+void registerCurrentCallback(void (*callback)(uint16_t rawCurrent_)){
   currentCallback_ = callback;
 }
