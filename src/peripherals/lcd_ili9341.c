@@ -99,7 +99,7 @@ void lcd_ili9341_init(){
   spi_io(0x86); //--
   
   lcd_ili9341_sendCommand(ILI9341_CMD_MEMORY_ACCESS_CONTROL);
-  spi_io(0x48); //48=coloumn address order + BGR?
+  spi_io(0x48); //Coloumn address order + BGR
   
   lcd_ili9341_sendCommand(ILI9341_CMD_COLMOD_PIXEL_FORMAT_SET);
   spi_io(0x55); //16bit rgb and mcu, default is 18
@@ -160,6 +160,22 @@ void lcd_ili9341_init(){
   
   lcd_ili9341_sendCommand(ILI9341_CMD_DISPLAY_ON); 
   //lcd_ili9341_sendCommand(ILI9341_CMD_MEMORY_WRITE);
+}
+
+/*
+ * Note: Internally the flip x and y bits are swaped when selecting landscape mode.
+ * This is done as the lanscape mode swaps the cols and rows around
+ */
+void lcd_ili9341_setDisplayMode(uint8_t mode){
+  uint8_t data=mode;
+  lcd_ili9341_sendCommand(ILI9341_CMD_MEMORY_ACCESS_CONTROL);
+  if (mode&ILI9341_DISPLAY_MODE_LANDSCAPE){
+    //Swaps the row and col flip bits for landscape
+    data &= ~(ILI9341_DISPLAY_MODE_FLIP_X|ILI9341_DISPLAY_MODE_FLIP_Y);
+    data |= (mode&ILI9341_DISPLAY_MODE_FLIP_X)<<1;
+    data |= (mode&ILI9341_DISPLAY_MODE_FLIP_Y)>>1;
+  }
+  spi_io(data);
 }
 
 void lcd_ili9341_setXAddress(uint16_t start, uint16_t end){
@@ -233,7 +249,7 @@ void lcd_ili9341_drawFilledRectangle(uint16_t colour, uint16_t startX, uint16_t 
 void lcd_ili9341_drawBitFontChar(uint8_t x, uint8_t y, uint8_t character, const bitfont *font, uint8_t fgHigh, uint8_t fgLow, uint8_t bgHigh, uint8_t bgLow){
   const uint8_t *bits = font->bits+((uint16_t)font->char_size)*((uint16_t)(character-font->start));
   uint8_t currentByte;
-  uint8_t bitCount = font->width*font->height;
+  uint16_t bitCount = font->width*font->height;
   uint8_t bytePos;
 
   //Set up region
