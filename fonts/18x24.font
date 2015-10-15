@@ -1,0 +1,8 @@
+#Defines a font containing a subset of 7bit ASCII
+#!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
+input=18x24.ppm
+output=bitfont_18x24
+width=18
+height=24
+start=32
+end=126
