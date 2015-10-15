@@ -1,6 +1,17 @@
 #include "int_print.h"
 
 
+void uint8Print(uint8_t value, uint8_t length, char *buffer){
+  uint8_t i;
+  buffer[length]=0;
+  buffer += length-1;
+  for (i=0; i<length; i++){
+    *buffer = (value % 10) + '0';
+    buffer--;
+    value /= 10;
+  }
+}
+
 void uint16Print(uint16_t value, char *buffer){
 	int8_t i;
 	for (i=4; i>=0; i--){

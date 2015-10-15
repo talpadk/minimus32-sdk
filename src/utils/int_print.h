@@ -21,7 +21,16 @@
 
 ///The buffer size required for uint16PrintDecimalNull
 #define UINT16_PRINT_DECIMAL_NULL_SIZE (UINT16_PRINT_DECIMAL_SIZE+1)
- 
+
+/** 
+ * Prints a uint8_t to a null terminated string
+ * 
+ * @param value the value to print
+ * @param length the number of didgets to print (plus null)
+ * @param buffer the buffer to print to
+ */
+void uint8Print(uint8_t value, uint8_t length, char *buffer);
+
 /** 
  * Prints an uint16_t (0-65535) to a buffer as a decimal number.
  * The number is printed with leading zeros.
