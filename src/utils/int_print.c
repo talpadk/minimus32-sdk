@@ -27,7 +27,7 @@ void uint16PrintNull(uint16_t value, char *buffer){
 }
 
 
-void uint16PrintDesimal(uint16_t value, uint8_t decimals, char *buffer){
+void uint16PrintDecimal(uint16_t value, uint8_t decimals, char *buffer){
 	int8_t i;
   int8_t digets;
   
@@ -54,7 +54,7 @@ void uint16PrintDecimalNull(uint16_t value, uint8_t decimals, char *buffer){
   buffer[3]='X';
   buffer[4]='X';
   buffer[5]='X';
-	uint16PrintDesimal(value, decimals, buffer);
+	uint16PrintDecimal(value, decimals, buffer);
 	buffer[6]=0;    
 }
 
