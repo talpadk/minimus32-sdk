@@ -18,15 +18,25 @@ void startNextADCConversion(void){
     adc_get_result(); //Should never happen
     break;
   case 0:
-    adc_set_channel(ADC0); //Select input voltage as mux input
-  case 2:
-    adc_set_channel(ADC2); //Select input LED temperature as mux input
-  case 4:
-    adc_set_channel(ADC3); //Select input LED voltage as mux input    
     rawCurrent_ = adc_get_result();
     if (currentCallback_ != 0){
       currentCallback_(rawCurrent_);
     }
+    adc_set_channel(ADC0); //Select input voltage as mux input
+    break;
+  case 2:
+    rawCurrent_ = adc_get_result();
+    if (currentCallback_ != 0){
+      currentCallback_(rawCurrent_);
+    }
+    adc_set_channel(ADC2); //Select input LED temperature as mux input
+    break;
+  case 4:
+    rawCurrent_ = adc_get_result();
+    if (currentCallback_ != 0){
+      currentCallback_(rawCurrent_);
+    }
+    adc_set_channel(ADC3); //Select input LED voltage as mux input    
     break;
   case 1:
     rawInputVoltage_ = adc_get_result();
@@ -41,9 +51,9 @@ void startNextADCConversion(void){
     adc_set_channel(ADC1);
     break;
   }
-  adc_start_conversion();
   adcConversionIndex_++;
   if (adcConversionIndex_>5) { adcConversionIndex_=0; }
+  adc_start_conversion();
 }
 
 ISR(ADC_vect){
@@ -83,6 +93,17 @@ uint16_t getLEDCurrent(){
   return result;
 }
 
+uint16_t getLEDTemperature(){
+  // 10mV/C, 3.3V=1024=330.0 C
+  uint32_t result;
+  ATOMIC_BLOCK(ATOMIC_FORCEON){
+    result = rawLedTemperature_;
+  }
+  result *= 3300;
+  result /= 1024;
+  
+  return result;
+}
 
 void registerCurrentCallback(void (*callback)(uint16_t rawCurrent_)){
   currentCallback_ = callback;
