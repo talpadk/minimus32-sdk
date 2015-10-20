@@ -295,6 +295,16 @@ void lcd_ili9341_drawBitFontString(uint8_t x, uint8_t y, const char *string, con
   }
 }
 
+void lcd_ili9341_drawBitFontCenteredString(uint8_t x, uint16_t width, uint8_t y, const char *string, const bitfont *font, uint16_t fg, uint16_t bg){
+  const char* buffer = string;
+  uint8_t fontWidth = font->width;
+  while (*buffer!=0){
+    width -= fontWidth;
+    buffer++;
+  }
+  lcd_ili9341_drawBitFontString(x+width/2, y, string, font, fg, bg);
+}
+
 void lcd_ili9341_drawImage565(uint16_t x, uint16_t y, const image565 *image){
   lcd_ili9341_setXAddress(x, x+image->width-1);
   lcd_ili9341_setYAddress(y, y+image->height-1);

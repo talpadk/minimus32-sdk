@@ -203,6 +203,19 @@ void lcd_ili9341_drawBitFontChar(uint8_t x, uint8_t y, uint8_t character, const 
 void lcd_ili9341_drawBitFontString(uint8_t x, uint8_t y, const char *string, const bitfont *font, uint16_t fg, uint16_t bg);
 
 /** 
+ *  Draws a string centered onto a region of the display using a bitfont
+ * 
+ * @param x the x start of the region 
+ * @param width the width of the region, must be wide enough to contain the string
+ * @param y the y coordinate for the upper left corner of the string
+ * @param string the null terminated string to draw
+ * @param font the font to render the string using
+ * @param fg the forground colour
+ * @param bg the background colour
+ */
+void lcd_ili9341_drawBitFontCenteredString(uint8_t x, uint16_t width, uint8_t y, const char *string, const bitfont *font, uint16_t fg, uint16_t bg);
+
+/** 
  * Draws a image565 onto the display
  * 
  * @param x the x coordinate for the upper left corner in the image
