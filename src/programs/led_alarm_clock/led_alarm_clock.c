@@ -15,6 +15,11 @@
  * PC2 = LED temperature (from LM35)
  * PC3 = LED voltage
  *
+ * PD3 = Encoder A
+ * PD7 = Encoder B
+ * PB0 = Encoder button
+ *
+ * PD5 = LED FAN (OC0B)
  * PD6 = LED PWM (OC0A)
  * 
  * PB2 = LCD CS
@@ -42,17 +47,15 @@
 #include "led_alarm_clock_adc.h"
 #include "twi.h"
 #include "lcd_ili9341.h"
+#include "quadrature_decoder.h"
 
-uint8_t blueLedOn;
+#include "bitfont_18x24.h"
 
 //550mA (550*1024/579)
 #define PANIC_LED_RAW_CURRENT (973)
 
 
-ISR(TIMER0_COMPB_vect) {
-}
-
-int16_t ledCurrentSP_ = 0;
+int16_t ledCurrentSP_ = 10;
 uint16_t ledPWM_ = 0;
 
 void setLedPWM(uint16_t setPoint){
@@ -79,12 +82,65 @@ void setChipSelectPin(unsigned char value){
   PORTB = (PORTB & 0b11111011)|value;
 }
 
+unsigned char encoderA(){
+  return PIND & 1<<3;
+}
+unsigned char encoderB(){
+  return PIND & 1<<7;
+}
+
+void encoderCallback(unsigned char up){
+  if (up){
+    if (ledCurrentSP_<400) { ledCurrentSP_+=1; }
+  }
+  else {
+    if (ledCurrentSP_>0){ ledCurrentSP_-=1; }
+  }
+}
+
+QuadratureDecoder decoder = {
+  &encoderA,
+  &encoderB,
+  &encoderCallback,
+  0  
+};
+
+ISR(PCINT2_vect, ISR_BLOCK){
+  quadrature_decoder_handleEvent(&decoder);
+}
 
 lcd_ili9341_device display = {
   &setChipSelectPin,
   &setDataCommandPin
 };
 
+void updateClockDisplayFunction(void *data){
+  timer1_wall_time time;
+  char timeString[3*3];
+  char buffer[UINT16_PRINT_DECIMAL_NULL_SIZE];
+  timer1_clock_get_time(&time);
+  uint8Print(time.hour, 2, timeString+0);
+  timeString[2]=':';
+  uint8Print(time.min,  2, timeString+3);
+  timeString[3+2]=':';
+  uint8Print(time.sec,  2, timeString+6);
+  
+  lcd_ili9341_drawBitFontCenteredString(0,320,44, timeString, &bitfont_18x24, ILI9341_COLOUR_WHITE, ILI9341_COLOUR_BLACK);
+
+
+  uint16PrintDecimalNull(getLEDTemperature(), 1, buffer);
+  replaceLeadingZeros(buffer);
+  lcd_ili9341_drawBitFontString(10,144, buffer, &bitfont_18x24, ILI9341_COLOUR_WHITE, ILI9341_COLOUR_BLACK);
+  lcd_ili9341_drawBitFontString(10+18*6,144, "C", &bitfont_18x24, ILI9341_COLOUR_WHITE, ILI9341_COLOUR_BLACK);
+
+  uint16PrintNull(getLEDCurrent(), buffer);
+  replaceLeadingZeros(buffer);
+  lcd_ili9341_drawBitFontString(10,144+24*1, buffer, &bitfont_18x24, ILI9341_COLOUR_WHITE, ILI9341_COLOUR_BLACK);
+
+  uint16PrintNull(ledCurrentSP_, buffer);
+  replaceLeadingZeros(buffer);
+  lcd_ili9341_drawBitFontString(10,144+24*2, buffer, &bitfont_18x24, ILI9341_COLOUR_WHITE, ILI9341_COLOUR_BLACK);
+}
 
 void regulate(void *data){
   int16_t spBandSize = ledCurrentSP_/20;
@@ -116,13 +172,20 @@ int main(void) {
   char inByte;
   char buffer[UINT16_PRINT_DECIMAL_NULL_SIZE];
   timer1_callback regulateTimer;
+  timer1_callback updateClockDisplay;
   
   watchdog_disable();
   clock_prescale_none();	
   spi_config_io_for_master_mode();
   
-  DDRD  |= 0b01010100; //PD6, PD4,PD2 as output
+  DDRD  |= 0b01110100; //PD6,PD5,PD4,PD2 as output
 
+  PORTD |= (1<<3)|(1<<7); //Enable pullup for the quad encoder
+  PORTB |= (1);
+  PCMSK2=1<<7|1<<3; //Enable masking for pin change irq.
+  quadrature_decoder_init(&decoder);
+  PCICR=1<<2; //Enable the IRQs
+  
   PORTD &=~0b00010000; //reset LCD
   _delay_ms(10);
   PORTD |= 0b00010000;
@@ -135,6 +198,7 @@ int main(void) {
 
   timer1_clock_init();
   timer1_clock_register_callback (0, 100, 1, &regulate, 0, &regulateTimer);
+  timer1_clock_register_callback (0, 500, 1, &updateClockDisplayFunction, 0, &updateClockDisplay);
   initADCSystem();
   registerCurrentCallback(&ledCurrentCallback);
 	
@@ -144,13 +208,14 @@ int main(void) {
 
 
   lcd_ili9341_obtainBus(1);
-
   lcd_ili9341_selectDevice(&display);
   lcd_ili9341_init();
-  lcd_ili9341_drawFilledRectangle(ILI9341_COLOUR_GREEN, 0, 239, 0, 319);
-  
+  lcd_ili9341_setDisplayMode(ILI9341_DISPLAY_MODE_BGR|ILI9341_DISPLAY_MODE_LANDSCAPE);
+  lcd_ili9341_drawFilledRectangle(ILI9341_COLOUR_BLACK, 0, 319, 0, 239);
+  lcd_ili9341_drawBitFontString(20,20,"Testing", &bitfont_18x24, ILI9341_COLOUR_WHITE, ILI9341_COLOUR_BLACK);
   async_serial_0_write_string(VT100_CURSOR_OFF);
   async_serial_0_write_string(VT100_CLEAR_SCREEN);
+
   
   while (1){
     if (async_serial_0_byte_ready()){
