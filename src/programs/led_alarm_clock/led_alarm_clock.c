@@ -48,6 +48,8 @@
 #include "twi.h"
 #include "lcd_ili9341.h"
 #include "quadrature_decoder.h"
+#include "ili9341_text_menu.h"
+
 
 #include "bitfont_18x24.h"
 
@@ -57,6 +59,26 @@
 
 int16_t ledCurrentSP_ = 10;
 uint16_t ledPWM_ = 0;
+
+ili9341_TextMenuItem mainMenuItems[] = {
+  {"Set Time"},
+  {"Set Alarm"},
+  {"Test"},
+  {"Hest"},
+  {"Abe"},
+  {0}  
+};
+
+ili9341_TextMenu mainMenu = {
+  &bitfont_18x24,
+  ILI9341_COLOUR_GREEN,
+  ILI9341_COLOUR_GREEN|ILI9341_COLOUR_BLUE,
+  ILI9341_COLOUR_BLACK,
+  3,
+  mainMenuItems,
+  0,0,0
+};
+
 
 void setLedPWM(uint16_t setPoint){
   ledPWM_ = setPoint;
@@ -89,13 +111,30 @@ unsigned char encoderB(){
   return PIND & 1<<7;
 }
 
-void encoderCallback(unsigned char up){
+
+void encoderCallbackFiltered(unsigned char up){
   if (up){
     if (ledCurrentSP_<400) { ledCurrentSP_+=1; }
   }
   else {
     if (ledCurrentSP_>0){ ledCurrentSP_-=1; }
   }
+}
+
+QuadratureDecoderDetentFilter quadratureFilter_ = {
+  encoderCallbackFiltered,
+  0
+};
+
+void enableIRQSCallbackFunction(void *data){
+  PCICR=1<<2; //Enable the IRQs
+}
+timer1_callback enableIrqTimer_;
+
+void encoderCallback(unsigned char up){
+  quadrature_decoder_detentFilterHandleEvent(&quadratureFilter_, up);
+  /*  PCICR=0; //disable IRQ to debunce;
+      timer1_clock_register_callback (0, 10, 0, &enableIRQSCallbackFunction, 0, &enableIrqTimer_);*/
 }
 
 QuadratureDecoder decoder = {
@@ -105,7 +144,7 @@ QuadratureDecoder decoder = {
   0  
 };
 
-ISR(PCINT2_vect, ISR_BLOCK){
+ISR(PCINT2_vect, ISR_NOBLOCK){
   quadrature_decoder_handleEvent(&decoder);
 }
 
@@ -134,12 +173,16 @@ void updateClockDisplayFunction(void *data){
   lcd_ili9341_drawBitFontString(10+18*6,144, "C", &bitfont_18x24, ILI9341_COLOUR_WHITE, ILI9341_COLOUR_BLACK);
 
   uint16PrintNull(getLEDCurrent(), buffer);
+  uint16PrintNull(quadratureFilter_.index, buffer);
   replaceLeadingZeros(buffer);
   lcd_ili9341_drawBitFontString(10,144+24*1, buffer, &bitfont_18x24, ILI9341_COLOUR_WHITE, ILI9341_COLOUR_BLACK);
 
   uint16PrintNull(ledCurrentSP_, buffer);
   replaceLeadingZeros(buffer);
   lcd_ili9341_drawBitFontString(10,144+24*2, buffer, &bitfont_18x24, ILI9341_COLOUR_WHITE, ILI9341_COLOUR_BLACK);
+
+  ili9341_textMenuDraw(&mainMenu, 320, 240);
+
 }
 
 void regulate(void *data){
@@ -175,7 +218,10 @@ int main(void) {
   timer1_callback updateClockDisplay;
   
   watchdog_disable();
-  clock_prescale_none();	
+  clock_prescale_none();
+  ili9341_textMenuInit(&mainMenu);
+
+  
   spi_config_io_for_master_mode();
   
   DDRD  |= 0b01110100; //PD6,PD5,PD4,PD2 as output
@@ -183,6 +229,7 @@ int main(void) {
   PORTD |= (1<<3)|(1<<7); //Enable pullup for the quad encoder
   PORTB |= (1);
   PCMSK2=1<<7|1<<3; //Enable masking for pin change irq.
+  quadrature_decoder_detentFilterInit(&quadratureFilter_);
   quadrature_decoder_init(&decoder);
   PCICR=1<<2; //Enable the IRQs
   
@@ -198,7 +245,7 @@ int main(void) {
 
   timer1_clock_init();
   timer1_clock_register_callback (0, 100, 1, &regulate, 0, &regulateTimer);
-  timer1_clock_register_callback (0, 500, 1, &updateClockDisplayFunction, 0, &updateClockDisplay);
+  //timer1_clock_register_callback (0, 500, 1, &updateClockDisplayFunction, 0, &updateClockDisplay);
   initADCSystem();
   registerCurrentCallback(&ledCurrentCallback);
 	
@@ -213,48 +260,9 @@ int main(void) {
   lcd_ili9341_setDisplayMode(ILI9341_DISPLAY_MODE_BGR|ILI9341_DISPLAY_MODE_LANDSCAPE);
   lcd_ili9341_drawFilledRectangle(ILI9341_COLOUR_BLACK, 0, 319, 0, 239);
   lcd_ili9341_drawBitFontString(20,20,"Testing", &bitfont_18x24, ILI9341_COLOUR_WHITE, ILI9341_COLOUR_BLACK);
-  async_serial_0_write_string(VT100_CURSOR_OFF);
-  async_serial_0_write_string(VT100_CLEAR_SCREEN);
-
   
   while (1){
-    if (async_serial_0_byte_ready()){
-      inByte = async_serial_0_read_byte();
-      if (inByte=='+' && ledCurrentSP_<500){
-	ledCurrentSP_+=10;
-      }
-      else if (inByte=='-' && ledCurrentSP_>0){
-	ledCurrentSP_-=10;
-      }
-      
-    }
-
-    async_serial_0_write_string(VT100_CURSOR_HOME);
-    async_serial_0_write_string("=== Hello world ===\r\n");
-
-    
-    uint16PrintDecimalNull(getInputVoltage(), 2, buffer);
-    replaceLeadingZeros(buffer);
-    async_serial_0_write_string(buffer);
-    async_serial_0_write_string(" V\r\n");
-
-    uint16Print(getLEDCurrent(), buffer);
-    buffer[UINT16_PRINT_SIZE]=0;
-    replaceLeadingZeros(buffer);
-    async_serial_0_write_string(buffer);
-    async_serial_0_write_string(" mA\r\n");
-    
-    uint16Print(ledPWM_, buffer);
-    buffer[UINT16_PRINT_SIZE]=0;
-    replaceLeadingZeros(buffer);
-    async_serial_0_write_string(buffer);
-    async_serial_0_write_string(" PWM\r\n");
-
-    uint16Print(ledCurrentSP_, buffer);
-    buffer[UINT16_PRINT_SIZE]=0;
-    replaceLeadingZeros(buffer);
-    async_serial_0_write_string(buffer);
-    async_serial_0_write_string(" SP\r\n");
+    updateClockDisplayFunction(0);
   }
   return 0;
 }
