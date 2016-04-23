@@ -70,6 +70,11 @@ uint8_t spi_async_io_end(void){
 
 
 void spi_config_io_for_master_mode(void){
+#if MCU == ATMEGA328P
+  DDRB &= ~0b00010000; //Set PB4 (MISO) as input
+  DDRB |=  0b00101100; //Set PB2 (SS), PB5 (SCLK) and PB3 (MOSI) as output
+#else
   DDRB &= ~0b00001000; //Set PB3 (MISO) as input
-  DDRB |= 0b00000111; //Set PB0 (SS), PB1 (SCLK) and PB2 (MOSI) as output
+  DDRB |=  0b00000111; //Set PB0 (SS), PB1 (SCLK) and PB2 (MOSI) as output
+#endif
 }

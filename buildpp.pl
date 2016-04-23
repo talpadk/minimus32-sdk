@@ -23,6 +23,10 @@ use threads;
 use threads::shared;
 use Thread::Semaphore;
 
+#=================== Setup of internal global variables ================
+#ToDo refactor the code to have all the global variables suffixed by '_' to make it easier to see that they are globals
+#May cause backwards compatibility issues for the ones that are changeable by localbuild.pl
+
 #mutex for all variables
 my $globalMutex = Thread::Semaphore->new(1);
 
@@ -56,10 +60,10 @@ my %timeStamps:shared=();
 #a hash used to remember files pased for this run, also speeds up parsing
 my %recurivePassedFiles:shared=();
 
-#a hash from files to modificaion times, for the O files that needs to be
+#a hash from files to modification times, for the O files that needs to be
 #rebuild this run.
 my %rebuildOFiles:shared=();
-#a has from filenames to compiler arguments for O files
+#a hash from filenames to compiler arguments for O files
 my %rebuildOFilesArguments:shared=();
 #The O file currently being build
 my $currentOFileNumber:shared = 1;
@@ -68,7 +72,7 @@ my $numberOfOFiles:shared = -1;
 #The time we started to compile files
 my $compileStartTime:shared = 0;
 
-#a hash from files to modificaion times, for the exe files that needs to be
+#a hash from files to modification times, for the exe files that needs to be
 #rebuild this run.
 my %rebuildExeFiles:shared=();
 #a has from filenames to linker arguments for exefiles
@@ -88,18 +92,14 @@ my $argumentsRead:shared = 0;
 #if set to true "" include pathes will have there path removed
 my $stripIncludePath:shared = 0;
 
-#
-#
-#
-#
+
+#============ localbuild.pl changeable variables below this point =============
+
 #
 # The localbuild.pl file may modify the variables below
 #          (those it makes sense to change)
 #
-#
-#
-#
-#
+
 
 
 #A hash from regEx's for OS names to $target values
@@ -162,7 +162,7 @@ my $cleanConfirm:shared = 1;
 
 #Colour definitions for different types of output
 my $colourVerbose:shared = "\033[33m";
-my $colourNormal:shared = "\e[0m";
+my $colourNormal:shared = "\033[37;40m";
 my $colourError:shared = "\033[33;41m";
 my $colourAction:shared = "\033[32m";
 my $colourExternal:shared = "\033[36m";
@@ -187,12 +187,13 @@ my $showCompilerCommand:shared = 0;
 #If true always shows the command used for linking (else just on error)
 my $showLinkerCommand:shared = 0;
 
+#If true buildpp will perform a unconditional clean opperation if the last target isn't the same as the current target
+#The functionality is intended to be used if the target may influence how other .o files are build
+my $newTargetClean = 0;
 
 #default sub for post processing.
 #1. argument = path + filename of executable to post process
-sub defaultPostProcessing
-{
-}
+sub defaultPostProcessing {}
 my $postProcessingRef = \&defaultPostProcessing;
 
 my $rescanFiles = 0;
@@ -201,7 +202,7 @@ my $rescanFiles = 0;
 #1. argument = path to .auto file
 #2. argument = filename of .auto file
 #3. argument = current path (you must return here at the end of the function
-#Set $rescanFiles = 1, if your auto process may gennerate new files.
+#Set $rescanFiles = 1, if your auto process may generate new files.
 sub defaultAutoProcessing
 {
   my $dirName = $_[0];
@@ -215,18 +216,8 @@ sub defaultAutoProcessing
 }
 my $autoProcessingRef = \&defaultAutoProcessing;
 
-#Sub to handle arguments
-sub handleArguments
-{
-  if (!$argumentsRead){
-    my $argument = $_[0];
-    if ($argument =~ /^.*\/([^\/]+)$/){
-	$argument = $1;
-    }
-    push(@targets, "$argument");
-  }
-}
-
+sub defaultBeforeCompileRunFunction {}
+my $beforeCompileRunRef = \&defaultBeforeCompileRunFunction;
 
 #The hash of arguments for use with GetOptions
 my %argumentHash = 
@@ -241,6 +232,43 @@ my %argumentHash =
 "j=i" => \$numberOfThreads,
 "distcc" => \$useDistcc
 );
+
+
+#============= Functions below this point ============
+
+
+sub printWarning {
+	print $colourWarning.$_[0].$colourNormal;
+}
+
+sub printError {
+	print $colourError.$_[0].$colourNormal;
+}
+
+sub printFatal {
+	die $colourError.$_[0].$colourNormal;
+}
+
+sub printGirlie {
+	my $string = $_[0];
+	if ($girlie){
+		print $colourGirlie.$string.$colourNormal;
+	}
+}
+
+#Sub to handle arguments, this is called by 'GetOptions' and updates the list of build targets
+sub handleArguments
+{
+  if (!$argumentsRead){
+    my $argument = $_[0];
+    #Strip path component from the argument 
+    if ($argument =~ /^.*\/([^\/]+)$/){
+			$argument = $1;
+    }
+    push(@targets, "$argument");
+  }
+}
+
 
 
 #Tries to reads an extra file and parse its contents, it will only
@@ -303,15 +331,9 @@ sub parseArguments
   $argumentsRead = 1;
 }
 
-readConfigFile("localbuild.pl");
-
-
-
-if (!$exeSuffix eq ""){
-    $exeSuffix = ".$exeSuffix";
-}
-
-#searches a dir for files that may be used to gennerate .o and exe files with
+#Recursively searches a dir for files that may be used to generate .o and exe files with
+#Any .auto files will also be passed to the $autoProcessingRef function
+#This function appends/populates the globalVariables $incDirs and %fileMapping
 sub findFilesInDir
 {
   my $dirName =  $_[0];
@@ -330,7 +352,7 @@ sub findFilesInDir
   
   foreach(@entrys){
     if ($_ !~ /^\.+$/){
-      #it was not .. or .
+      #it was not .. , . or a linux hidden file
       my $fileName = $dirName."/".$_;
       my $mode = (stat($fileName))[2];
       if (S_ISDIR($mode)){
@@ -383,7 +405,7 @@ sub readModuleList
 }
 
 
-#generates a string that can be used to search the filelist for files that
+#generates a string that can be used to search the file list for files that
 #the user has requested a build of
 sub makeMatchString
 {
@@ -435,10 +457,10 @@ sub getTime
   return $result;
 }
 
-#parses a file and gennerates a parsed version in memory (only 1. level deps are
-#generated, code files will also gennerate linker level 1. information
+#parses a file and generates a parsed version in memory (only 1. level deps are
+#generated, code files will also generate linker level 1. information
 #first argument is the name of the file without path
-#returns nothing, however the result can be found in the memory cache
+#returns nothing, however the result can be found in the memory cache (%deps)
 sub parseFile
 {
   my $filename = $_[0];
@@ -505,7 +527,7 @@ sub parseFile
           push (@includeList, "\#link $linkName");
         }
       }
-      if ($line =~ /\/{2,3}(\#cflags|\#ldflags|\#exe|\#target|\#lazylinking|\#dontlink)(\s?[^\r^\n]*)/){
+      if ($line =~ /\/{2,3}(\#cflags|\#ldflags|\#exe|\#target|\#lazylinking|\#global_cflags)(\s?[^\r^\n]*)/){
         push (@includeList, ($1.$2));
       }
     } 
@@ -516,8 +538,13 @@ sub parseFile
 }
 
 
-#parses a given file recursivly returning a list of alle include and
-#link dependencies
+#Parses a given file recursively returning a list of all include and link dependencies.
+#
+#The parsing is done by calling parseFile(), and calling it self for the recursive element.
+#
+#The following tokens triggers a recursion #link and #include
+#From the recursion into #link dependencies only #link, #ldflags and #global_cflags are used
+#
 #returns a list of all dependencies
 #first argument is the name of the file without path
 sub parseFileRecurcive
@@ -553,7 +580,7 @@ sub parseFileRecurcive
       parseFile($newFile.".$codeSuffix");
       my @subItem = parseFileRecurcive($newFile.".$codeSuffix");
       for my $subSubItem (@subItem){
-        if ($subSubItem =~ /\#link/ || $subSubItem =~ /\#ldflags/){
+        if ($subSubItem =~ /\#link/ || $subSubItem =~ /\#ldflags/ || $subSubItem =~ /\#global_cflags/){
           if (!exists($unique{$subSubItem})){
             push (@result, $subSubItem);
             $unique{$subSubItem} = " ";
@@ -577,7 +604,7 @@ sub parseFileRecurcive
 }
 
 
-#gennerate .d file on disk (cached version of parseFile)
+#generate .d file on disk (cached version of parseFile)
 #includes all levels, created using parseFileRecurcive
 #first argument is the name of the file without path
 sub parseFileCached{
@@ -605,10 +632,10 @@ sub parseFileCached{
 
   if ($dTime == -1 or $dTime <= $fileTime){
     $rebuild = 1;
-     $colourVerbose."new".$colourNormal."\n";
+    $colourVerbose."new".$colourNormal."\n";
   }
   else {
-    #dfile newer that source, now we need to test .dfiles that tis file depends on
+    #dfile newer that source, now we need to test .dfiles that this file depends on
     my $dFile;
     open ($dFile, "<$dFilename") ||
       die ($colourError."Unexpected error unable to open $dFilename for input".
@@ -688,7 +715,7 @@ sub parseFileCached{
 
 
 
-#returns a string containing progress infor (only valid when compiling O files) !!! THREAD WARNING !!!
+#returns a string containing progress info (only valid when compiling O files) !!! THREAD WARNING !!!
 sub getProgressInfo
 {
   my $timePassed = time()-$compileStartTime;
@@ -726,7 +753,7 @@ sub buildObjectFile
       $filename =~ s/^.+\///;
   }
   
-  my $comileArguments = $rebuildOFilesArguments{$filename};
+  my $comileArguments = $cflags.$rebuildOFilesArguments{$filename};
   my $path = $fileMapping{$filename.".$codeSuffix"};
   
   $globalMutex->down;
@@ -771,7 +798,7 @@ sub buildObjectFile
 }
 
 #builds an object file
-#first argument is the code file to use l
+#first argument is the code file to use
 sub findObjectFiles
 {
   my $filename = $_[0];
@@ -837,7 +864,7 @@ sub findObjectFiles
     my @linkList = parseFileCached($filename.".$codeSuffix");
     my $linkLine = "$filename.$objectSuffix";
     my %linkMap = ();
-    my $myCFlags = $cflags;
+    my $myCFlags = "";
   
     for my $item (@linkList){
       if ($item =~ /^#cflags\s+([^\n^\r]+)/){
@@ -881,7 +908,7 @@ sub buildExeFile
   $timeStamps{$outputDir.$filename."$exeSuffix"} = -2;
 }
 
-#finds the files requered for an output file, from a file + path without suffix
+#finds the files required for an output file, from a file + path without suffix
 sub findBuildFilesForFile
 {
   my $filename = $_[0];
@@ -910,35 +937,24 @@ sub findBuildFilesForFile
   my %linkMap = ();
   $linkMap{"$filename.$objectSuffix"} = " ";
   my $myLdFlags = $ldflags;
-
-  #Parse the depends to look for #dontlink
-  my %dontLink=();
+  #filter list to contain only valid data
+  my @filterList;
   for my $item (@linkList){
-      if ($item =~ /^#dontlink\s+(\S+)\s*/){
-	  $dontLink{$1}=1;
-      }
-  }
-
-  for my $item (@linkList){
-    #handle link statements 
     if ($item =~ /^#link\s+(\S+)\s*/){
       my $oFile = $1;
-      if (!exists($dontLink{$oFile})){
-	  #not explicitly told not to link the file, continue. 
-	  my $objFile = $oFile.".$objectSuffix";
-	  if (!exists($linkMap{$objFile})){
-	      $linkMap{$objFile}=" ";
-	      findObjectFiles($oFile);
-	      $objTime = getTime($buildDir.$objFile);
-	      if ($exeTime <= $objTime){
-		  $needsRebuild = 1;
-		  if ($girlie){
-		      print $colourGirlie."Do you like this new object file $objFile?".
-			  " Well lets relink $filename$exeSuffix$colourNormal\n";
-		  }
-	      }        
-	      $linkLine = $linkLine." $buildDir$objFile";
-	  }
+      my $objFile = $oFile.".$objectSuffix";
+      if (!exists($linkMap{$objFile})){
+        $linkMap{$objFile}=" ";
+        findObjectFiles($oFile);
+        $objTime = getTime($buildDir.$objFile);
+        if ($exeTime <= $objTime){
+          $needsRebuild = 1;
+          if ($girlie){
+            print $colourGirlie."Do you like this new object file $objFile?".
+            " Well lets relink $filename$exeSuffix$colourNormal\n";
+          }
+        }        
+        $linkLine = $linkLine." $buildDir$objFile"
       }
     }
     if ($item =~ /^#ldflags\s+(.*)\s*/){
@@ -1018,7 +1034,37 @@ sub threadBuildFiles
   }
 }
 
+#Finds the #global_cflags in the requested build taregets and atts them to $cflags
+sub getGlobalFlags
+{
+	#gennerate a regular expression that matches the names the user requested to
+  #have build
+  my $match = makeMatchString();
+  
+	my %flagsFound = ();
+
+  #iterate over all known files
+  foreach(keys(%fileMapping)){
+    if ($_ =~ /^($match)$/){
+      my $theFile = $_;
+			my @tokens = parseFileCached($theFile);
+			foreach my $token (@tokens){
+				if ($token =~ /#global_cflags\s+(.*)/){
+					my $flag = $1;
+					$flagsFound{$flag}=1;
+					printGirlie("Oh Look in '$theFile' I found the global flag '$flag'\n") 
+				}
+			}
+    }
+  }
+	my $globalFlags = join(' ', keys(%flagsFound));
+	$cflags = "$globalFlags $cflags";
+}
+
 #builds the files requested
+#Uses scanForRebuildFiles to find the .o files that needs to be rebuild
+#Uses threadBuildFiles to perform the actual build
+#Then uses scanForRebuildFiles to find the files that need to be relinked 
 sub buildFiles
 {
   #create the output dir if it dos't exist.
@@ -1033,8 +1079,9 @@ sub buildFiles
     #rebuild (in order to re build the latest modifications fisrt)
     $rebuildOFiles{$file}=getTime("$path$file.$codeSuffix");
   }
-  
-  
+
+	#Call the pre compile function just before we start to build files
+	&$beforeCompileRunRef();
   my $buildMessage = "Building files";
   if ($numberOfThreads != 1){
     $buildMessage .= " (multi threaded using $numberOfThreads threads)";
@@ -1085,7 +1132,7 @@ sub testFiles
 }
 
 #fixes variables so that they get there default values
-sub fixVariables
+sub fixVariablesWithDefaults
 {
   if ($numberOfThreads == 0 and $useDistcc){
     my $distccSettings = $ENV{"DISTCC_HOSTS"};
@@ -1106,27 +1153,6 @@ sub fixVariables
   }
 }
 
-$ENV{"target"}=$target;
-
-if (!$argumentsRead){
-  parseArguments();
-}
-
-if (!$useColours){
-  $colourVerbose = "";
-  $colourNormal = "";
-  $colourError = "";
-  $colourAction = "";
-  $colourExternal = "";
-  $colourWarning = "";
-  $colourGirlie = "";
-}
-
-readModuleList();
-if ($rescanFiles){
-  %fileMapping=();
-  readModuleList();
-}
 #removes ALL files from a directory, use with extreme care!
 #first arg is the path of the dir
 sub purgeDir
@@ -1149,10 +1175,77 @@ sub purgeDir
   }  
 }
 
+sub updateCheckForTargetCleanCache {
+	my $targetCache = $buildDir."__lastTarget.cache";
+	my $newTarget = join(',', @targets);
+	my $targetCacheFile;
 
+	open($targetCacheFile, ">$targetCache") || printFatal("Can't write to '$targetCache'\n");
+	print $targetCacheFile $newTarget;
+	close($targetCacheFile);
+}
 
-fixVariables();
+sub checkForTargetClean {
+	my $targetCache = $buildDir."__lastTarget.cache";
+	my $newTarget = join(',', @targets);
+	my $oldTarget = '';
+	
+	my $targetCacheFile;
+	local $/; # enable localized slurp mode
+	
+	if ($newTargetClean){
+		if (open($targetCacheFile, "<$targetCache")){
+			$oldTarget = <$targetCacheFile>;
+			close($targetCacheFile);
+		}
 
+		if (!($oldTarget eq $newTarget)){
+			printWarning("Target changed from '$oldTarget' to '$newTarget', clean forced!\n");
+			$doClean = 1;
+		}
+	}
+	updateCheckForTargetCleanCache();
+}
+
+#====================== Start of main function below this point =======================
+
+readConfigFile("localbuild.pl");
+
+#Patch the exe file suffix with dot
+if (!$exeSuffix eq ""){
+    $exeSuffix = ".$exeSuffix";
+}
+
+#$target can have been assigned a value by localbuild.pl (simple assignment or by calling autoTaget())
+#$target is stored in the environment variables allowing external code to use the information if needed
+$ENV{"target"}=$target;
+
+if (!$argumentsRead){
+  parseArguments();
+}
+
+if (!$useColours){
+  $colourVerbose = "";
+  $colourNormal = "";
+  $colourError = "";
+  $colourAction = "";
+  $colourExternal = "";
+  $colourWarning = "";
+  $colourGirlie = "";
+}
+
+readModuleList();
+#.auto files may generate new files if any is seen a file rescan is requested
+if ($rescanFiles){
+  %fileMapping=();
+  readModuleList();
+}
+
+fixVariablesWithDefaults();
+
+checkForTargetClean();
+
+#Code for handling the cleaning of the output and build directories
 if ($doClean == 1){
   my $proceedWithClean = 1;
     
@@ -1188,10 +1281,11 @@ if ($doClean == 1){
     purgeDir($buildDir);
     purgeDir($outputDir);
   }
-  
+  updateCheckForTargetCleanCache();
 }
 
 if ($doBuild == 1){
+	getGlobalFlags();
   buildFiles();
 }
 if ($doTest){

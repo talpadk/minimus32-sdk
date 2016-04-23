@@ -19,7 +19,7 @@
  * 
  */
 
-//min clock 100ns(10MHz write), 150ns(6,67MHz read) 
+//Minimum clock period 100ns(10MHz write), 150ns(6,67MHz read) 
 //colour format(R:5-bit, G:6-bit, B:5-bit)
 
 #define ILI9341_COLOUR_WHITE (0xffff)
@@ -27,6 +27,25 @@
 #define ILI9341_COLOUR_RED   (0b1111100000000000)
 #define ILI9341_COLOUR_GREEN (0b0000011111100000)
 #define ILI9341_COLOUR_BLUE  (0b0000000000011111)
+
+///Swaps the cols and rows, with the cheap QVGA displays this is landscape mode
+#define ILI9341_DISPLAY_MODE_LANDSCAPE (1<<5)
+
+///Normal ordering cols=x and rows=y
+#define ILI9341_DISPLAY_MODE_PORTRAIT (0)
+
+///Write the "x" pixles backwards in memory (default needed for the cheap QVGA displays in portrait mode.
+#define ILI9341_DISPLAY_MODE_FLIP_X (1<<6)
+
+///Write the "y" pixles backwards in memory. 
+#define ILI9341_DISPLAY_MODE_FLIP_Y (1<<7)
+
+///Used with displays that have a RGB pixel layout
+#define ILI9341_DISPLAY_MODE_RGB (0)
+
+///Used with displays that have a BGR pixel layout (seems to be the case with the cheap one from china)
+#define ILI9341_DISPLAY_MODE_BGR (1<<3)
+
 
 typedef struct {
   io_outFunction setChipSelect;
@@ -76,6 +95,14 @@ void lcd_ili9341_deselectDevice(lcd_ili9341_device *device);
  * 
  */
 void lcd_ili9341_init();
+
+
+/** 
+ * Changes the display mode, used for switching from portarit to landscape
+ *
+ * @param mode ILI9341_DISPLAY_MODE_* flags
+ */
+void lcd_ili9341_setDisplayMode(uint8_t mode);
 
 /** 
  * Sets the X address range of the next display region low level write
@@ -174,6 +201,19 @@ void lcd_ili9341_drawBitFontChar(uint8_t x, uint8_t y, uint8_t character, const 
  * @param bg the background colour
  */
 void lcd_ili9341_drawBitFontString(uint8_t x, uint8_t y, const char *string, const bitfont *font, uint16_t fg, uint16_t bg);
+
+/** 
+ *  Draws a string centered onto a region of the display using a bitfont
+ * 
+ * @param x the x start of the region 
+ * @param width the width of the region, must be wide enough to contain the string
+ * @param y the y coordinate for the upper left corner of the string
+ * @param string the null terminated string to draw
+ * @param font the font to render the string using
+ * @param fg the forground colour
+ * @param bg the background colour
+ */
+void lcd_ili9341_drawBitFontCenteredString(uint8_t x, uint16_t width, uint8_t y, const char *string, const bitfont *font, uint16_t fg, uint16_t bg);
 
 /** 
  * Draws a image565 onto the display
