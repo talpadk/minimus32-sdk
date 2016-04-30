@@ -6,6 +6,7 @@
  * @author Visti Andresen
  * @brief  Board support for the LED pins on the Pro Micro
  * @ingroup bsp
+ * @ingroup board_promicro
  * 
  */
 

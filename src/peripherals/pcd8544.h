@@ -1,6 +1,11 @@
 #ifndef MOD_PCD8544_H
 #define MOD_PCD8544_H
 
+/**
+ * @ingroup per_displays
+ */
+
+
 #include <stdint.h>
 #include "vertical_byte_font.h"
 

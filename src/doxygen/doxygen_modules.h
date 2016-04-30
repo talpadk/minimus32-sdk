@@ -1,43 +1,84 @@
 /**
  * @defgroup bsp Board Support Package
- * Code for the on chip/board hardware.<br>
- * <br>
+ * @brief Code for the on chip/board hardware.
+ * IC located on the boards are considered peripherals see the Peripherals group
+ *
  * Location: src/board_support
  */
 
 /**
+ * @defgroup board
+ * @brief Board/PCB specific code mostly demo code for different boards
+ */
+
+/**
+ * @defgroup board_promicro
+ * @ingroup board
+ * @brief Pro Micro specific code
+ */
+
+/**
+ * @defgroup board_minimus32
+ * @ingroup board
+ * @brief Minimus32 specific code
+ */
+
+/**
  * @defgroup per Peripherals
- * Code for devices you might want to connect to the MCU.<br>
- * <br>
+ * @brief Drives for devices you might want to connect to the MCU.
+ *
  * Location: src/peripherals
  */
 
 /**
  * @defgroup per_displays Display peripherals
  * @ingroup per
- * Support code for different types of display devices
- * <br>
+ * @brief  Display drivers
+ *
+ * Location: src/peripherals
+ */
+
+/**
+ * @defgroup per_sensors Sensor peripherals
+ * @ingroup per
+ * @brief  Sensor drivers
+ *
+ * Location: src/peripherals
+ */
+
+/**
+ * @defgroup per_sensors_temperature Temperature sensor peripherals
+ * @ingroup per_sensors
+ * @brief  Temperature sensor drivers
+ *
+ * Location: src/peripherals
+ */
+
+/**
+ * @defgroup per_sensors_humidity Humidity sensor peripherals
+ * @ingroup per_sensors
+ * @brief  Humidity sensor drivers
+ *
  * Location: src/peripherals
  */
 
 
 
-
 /**
  * @defgroup prog Programs
- * Actual programs intended to perform some kind of task.<br>
- * <br>
- * For instance if you want to construct a robot to whipe out the human race, then this is the module for its main program.<br>
- * <br>
+ * @brief Actual programs intended to perform some kind of task.
+ * 
+ * For instance if you want to construct a robot to whipe out the human race, then this is the place for its main program.<br>
+ * 
  * Location: src/programs
  */
 
 /**
  * @defgroup util Utilities
- * Helper utility functions
- * <br>
+ * @brief Helper utility functions
+ *
  * Typically programs that manipulate data in memory in some way, examples could be CRC calculations, functions to print things, functions to manipulate generic data structures
- * <br>
+ * 
  * Location: src/utils
  */
 
@@ -45,9 +86,10 @@
 
 /**
  * @defgroup tests Test programs
- * Demo code that demonstrates the usage some of the ther code.<br>
- * Also used to during development to verify that the code works.<br>
- * <br>
+ * @brief Test / Demo code that demonstrates the usage some other code.
+ *
+ * Also used to during development to verify that the code works.
+ * 
  * Location: src/tests
  */
 
