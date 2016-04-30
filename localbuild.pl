@@ -61,6 +61,9 @@ sub beforeCompileRunFunction
 	    if ($mcu eq "atmega328p"){
 		$testProgram = "./upload_ISP_usbasp.sh ";
 	    }
+	    elsif ($mcu eq "atmega32u4"){
+		$testProgram = "./upload_ISP_usbasp.sh ";
+	    }
 	}
 	    
 	
