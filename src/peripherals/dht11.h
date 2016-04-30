@@ -9,6 +9,9 @@
  * @file   dht11.h
  * @author Visti Andresen 
  * @ingroup per
+ * @ingroup per_sensors
+ * @ingroup per_sensors_temperature
+ * @ingroup per_sensors_humidity
  *
  * @brief  Driver for DHT11 sensors
  *

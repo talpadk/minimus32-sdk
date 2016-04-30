@@ -11,6 +11,8 @@
  * @file
  * @author Visti Andresen
  * @ingroup per
+ * @ingroup per_sensors
+ * @ingroup per_sensors_temperature
  * @todo write one_wire.h 
  */
 

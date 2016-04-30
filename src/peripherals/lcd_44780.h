@@ -6,7 +6,7 @@
 /**
  * @file
  * @author Visti Andresen
- * @ingroup per
+ * @ingroup per_displays
  */
 
 /**

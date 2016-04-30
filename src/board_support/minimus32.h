@@ -7,6 +7,7 @@
  * @file
  * @author Visti Andresen
  * @ingroup bsp
+ * @ingroup board_minimus32
  */
 
 

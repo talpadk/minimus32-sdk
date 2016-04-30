@@ -1,6 +1,14 @@
 #ifndef USB_SERIAL_HELPERS_H
 #define USB_SERIAL_HELPERS_H
 
+/**
+ * @file   usb_serial_helpers.h
+ * 
+ * @brief  Helper functions for using a USB based serialport
+ * @ingroup util
+ */
+
+
 #include <stdint.h>
 #include <stdio.h>
 

@@ -59,7 +59,10 @@ sub beforeCompileRunFunction
 	if ($cflags =~ /-mmcu\s*=\s*(\w+)/){
 	    my $mcu = $1;
 	    if ($mcu eq "atmega328p"){
-		$testProgram = "./upload_ISP_usbasp.sh ";
+		$testProgram = "./upload_ISP_avrdude.sh usbasp-clone m328p";
+	    }
+	    elsif ($mcu eq "atmega32u4"){
+		$testProgram = "./upload_ISP_avrdude.sh usbasp-clone m32u4 ";
 	    }
 	}
 	    
