@@ -9,6 +9,10 @@
 /**@see io_setOutput
  */
 #define io_PIN_LOW  (0)
+
+#define io_PIN_INPUT (0)
+#define io_PIN_OUTPUT (255)
+
 /** 
  * A prototype for a IO function used for creating pointers to functions handling bit IO output
  * 

@@ -22,8 +22,8 @@ void dht11_init_data(dht11 *this){
 void dht11_sendStartDone(void *data){
   dht11 *this = (dht11*)data;
   //bus hi-z with pull up
-  this->setOutput(0);
-  this->out(255);  
+  this->setOutput(io_PIN_INPUT);
+  this->out(io_PIN_HIGH);  
 
   enable_external_interrupt_input(this->extIrq, falling);
 
@@ -41,8 +41,8 @@ void dht11_init(dht11 *this, io_setOutput setOutput, io_outFunction out, uint8_t
   dht11_init_data(this);
 
   //bus hi with pull up
-  this->setOutput(0);
-  this->out(255);
+  this->setOutput(io_PIN_INPUT);
+  this->out(io_PIN_HIGH);
 
   dht11_setState(this, DHT11_STATE_INIT);
   
@@ -115,10 +115,10 @@ void dht11_startConversion(dht11 *this){
   dht11_init_data(this);
 
   //Pull low
-  this->setOutput(1);
-  this->out(0);
+  this->setOutput(io_PIN_OUTPUT);
+  this->out(io_PIN_LOW);
 
-  timer1_clock_register_callback (0,2, TIMER1_CLOCK_ONCE, dht11_sendStartDone, this, &(this->callback));
+  timer1_clock_register_callback (0, 20, TIMER1_CLOCK_ONCE, dht11_sendStartDone, this, &(this->callback));
 }
 
 dht11_state dht11_getConversionState(dht11 *this){
