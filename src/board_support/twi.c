@@ -64,6 +64,7 @@ TWI_ERROR twi_blocking_master_opperation(uint8_t address, uint8_t bufferLength, 
   if (address & TWI_ADDRESS_READ){
     //read loop
     while (bufferLength!=0){
+      TWCR |= (1<<TWINT);
       TWI_WAIT();
       if (TWI_STATUS==0x58){
 	TWCR = (1<<TWINT) | (1<<TWEA) | (1<<TWSTO) | (1<<TWEN); //Send stop condition
